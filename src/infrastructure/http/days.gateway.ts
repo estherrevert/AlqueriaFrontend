@@ -1,9 +1,30 @@
 import { api } from "@/shared/api/client";
-import type { DaysGateway, Day } from "@/domain/days/ports";
+import type { DayCoreDTO, DayOneResponseDTO, DaysListResponseDTO } from "./days.schemas";
 
-export const DaysHttpGateway: DaysGateway = {
-  async getOrCreate(dateISO: string): Promise<Day> {
-    const res = await api.get(`/api/v1/days`, { params: { date: dateISO } });
-    return res.data.data as Day; // { id, date }
+export const DaysHttpGateway = {
+  async getByDate(date: string): Promise<DayCoreDTO | null> {
+    try {
+      const r = await api.get<DayOneResponseDTO>("/api/v1/days", { params: { date } });
+      return r?.data?.data ?? null;
+    } catch (e: any) {
+      if (e?.response?.status === 404) return null;
+      throw e;
+    }
+  },
+
+  async create(date: string): Promise<DayCoreDTO> {
+    const r = await api.post<DayOneResponseDTO>("/api/v1/days", { date });
+    return r?.data?.data;
+  },
+
+  async getOrCreate(date: string): Promise<DayCoreDTO> {
+    const found = await this.getByDate(date);
+    if (found) return found;
+    return await this.create(date);
+  },
+
+  async listRange(params: { from: string; to: string }): Promise<DayCoreDTO[]> {
+    const r = await api.get<DaysListResponseDTO>("/api/v1/days", { params });
+    return r?.data?.data ?? [];
   },
 };

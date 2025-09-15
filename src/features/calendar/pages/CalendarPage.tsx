@@ -1,92 +1,98 @@
-import { useEffect, useRef, useState } from "react";
-import { api } from "@/shared/api/client";
-import type { CalendarDaysResponse, DayDTO } from "@/infrastructure/http/calendar.schemas";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarToolbar, type CalendarMode } from "@/ui/calendar/CalendarToolbar";
 import MonthGrid from "@/ui/calendar/MonthGrid";
+import WeekendsYear from "@/ui/calendar/WeekendsYear";
+import type { DayDTO } from "@/infrastructure/http/calendar.schemas";
+import { makeDaysUseCases } from "@/application/days/usecases";
+import { api } from "@/shared/api/client";
+
+const iso = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+function rangeFor(mode: CalendarMode, pivot: Date) {
+  const y = pivot.getFullYear();
+  const m = pivot.getMonth();
+  if (mode === "month") {
+    const from = iso(new Date(y, m, 1));
+    const to = iso(new Date(y, m + 1, 0));
+    return { from, to, weekendsOnly: false };
+  }
+  return { from: `${y}-01-01`, to: `${y}-12-31`, weekendsOnly: true };
+}
+
+type OverlayBucket = { date: string; events?: any[]; tastings?: any[] };
 
 export default function CalendarPage() {
-  const [days, setDays] = useState<DayDTO[] | null>(null);
-  const [cursor, setCursor] = useState(new Date());
+  const [mode, setMode] = useState<CalendarMode>("month");
+  const [pivot, setPivot] = useState(new Date());
+  const [days, setDays] = useState<DayDTO[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Evita doble fetch en development por React.StrictMode
-  const didInit = useRef(false);
+  const query = useMemo(() => rangeFor(mode, pivot), [mode, pivot]);
+  const daysUC = useMemo(() => makeDaysUseCases(), []);
 
   useEffect(() => {
-    // En dev, StrictMode monta/desmonta y vuelve a montar -> doble efecto
-    if (import.meta.env.DEV) {
-      if (didInit.current) return;
-      didInit.current = true;
-    }
-
     let cancelled = false;
-    const ctrl = new AbortController();
+    setLoading(true);
+    setError(null);
 
-    async function load() {
+    (async () => {
       try {
-        setLoading(true);
-        setError(null);
+        // 1) Esqueleto desde el back (todas las fechas)
+        let skeleton = await daysUC.getRange(query.from, query.to); // [{id,date}, ...]
+        if (query.weekendsOnly) {
+          skeleton = skeleton.filter((d) => {
+            const dt = new Date(d.date);
+            const dow = dt.getDay(); // 0 dom, 6 sáb
+            return dow === 0 || dow === 6;
+          });
+        }
 
-        const yyyy = cursor.getFullYear();
-        const mm = String(cursor.getMonth() + 1).padStart(2, "0");
-        const from = `${yyyy}-${mm}-01`;
-        const toDate = new Date(yyyy, cursor.getMonth() + 1, 0); // fin de mes (del mes actual)
-        const to = `${toDate.getFullYear()}-${String(toDate.getMonth() + 1).padStart(2, "0")}-${String(
-          toDate.getDate()
-        ).padStart(2, "0")}`;
+        // 2) Overlay (solo días con eventos/catas)
+        const r = await api.get<OverlayBucket[]>("/api/v1/calendar/days", {
+          params: { from: query.from, to: query.to },
+        });
+        const overlay = Array.isArray(r?.data) ? r.data : [];
+        const byDate = new Map<string, OverlayBucket>();
+        overlay.forEach((b) => byDate.set(String(b.date), b));
 
-        // Clave de esta petición para ignorar respuestas antiguas
-        const reqKey = `${from}->${to}`;
-
-        const r = await api.get<CalendarDaysResponse>(`/api/v1/calendar/days`, {
-          params: { from, to },
-          signal: ctrl.signal,
+        // 3) Fusión
+        const completed: DayDTO[] = skeleton.map((d) => {
+          const bucket = byDate.get(d.date);
+          return {
+            date: d.date,
+            events: Array.isArray(bucket?.events) ? bucket!.events : [],
+            tastings: Array.isArray(bucket?.tastings) ? bucket!.tastings : [],
+          };
         });
 
-        if (cancelled) return;
-
-        const raw = r?.data?.data;
-        const safe = Array.isArray(raw) ? raw : [];
-
-        // (opcional) consola para depurar
-        console.debug("[calendar] loaded", reqKey, "items:", safe.length);
-
-        setDays(safe);
+        if (!cancelled) setDays(completed);
       } catch (e: any) {
-        if (e?.name === "CanceledError" || e?.name === "AbortError") return;
-        console.warn("[calendar] error loading days:", e);
-        setDays([]);
-        setError(e?.message ?? "No se pudo cargar el calendario");
+        if (!cancelled) setError(e?.message || "No se pudo cargar el calendario");
       } finally {
         if (!cancelled) setLoading(false);
       }
-    }
+    })();
 
-    load();
-
-    // Cancelar si cambia el cursor o se desmonta
     return () => {
       cancelled = true;
-      ctrl.abort();
     };
-  }, [cursor]);
-
-  const goPrev = () => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1));
-  const goNext = () => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1));
+  }, [query.from, query.to, query.weekendsOnly, daysUC]);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <button onClick={goPrev} className="px-2 py-1 border rounded">◀</button>
-        <span className="text-sm">{cursor.toLocaleString(undefined, { month: "long", year: "numeric" })}</span>
-        <button onClick={goNext} className="px-2 py-1 border rounded">▶</button>
-      </div>
+      <CalendarToolbar
+        mode={mode}
+        onModeChange={setMode}
+        yearMonth={pivot}
+        onYearMonthChange={setPivot}
+      />
 
       {loading && <div className="text-sm text-gray-500">Cargando calendario…</div>}
       {error && <div className="text-sm text-red-600">{error}</div>}
 
-      {/* Siempre enviamos array a MonthGrid */}
-      <MonthGrid days={days ?? []} />
+      {mode === "month" ? <MonthGrid days={days} /> : <WeekendsYear days={days} />}
     </div>
   );
 }

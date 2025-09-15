@@ -4,79 +4,74 @@ import type { EventStatus } from "@/domain/events/types";
 import { makeEventsUseCases } from "@/application/events/usecases";
 import { EventsHttpGateway } from "@/infrastructure/http/events.gateway";
 import { makeDaysUseCases } from "@/application/days/usecases";
-import { DaysHttpGateway } from "@/infrastructure/http/days.gateway";
 
-// factories sobre gateways (objetos, no clases)
 const eventsUC = makeEventsUseCases(EventsHttpGateway);
-const daysUC = makeDaysUseCases(DaysHttpGateway);
+const daysUC = makeDaysUseCases();
 
 export default function EventForm() {
   const nav = useNavigate();
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState<EventStatus>("reserved" as EventStatus);
-  const [date, setDate] = useState(""); // YYYY-MM-DD
-  const [userIds, setUserIds] = useState<number[]>([]);
+  const [date, setDate] = useState<string>("");
+  const [userIds, setUserIds] = useState<string>("1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
     try {
-      if (!title.trim()) throw new Error("Título requerido");
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Fecha inválida (YYYY-MM-DD)");
-      if (!userIds.length) throw new Error("Selecciona al menos un responsable");
+      setLoading(true);
+      if (!date) throw new Error("Selecciona una fecha");
 
-      // 1) garantizar Day
+      // 1) Day: GET ?date, si no existe -> POST /days
       const day = await daysUC.getOrCreate(date);
+      const ids = userIds.split(",").map(s => parseInt(s.trim(), 10)).filter(Number.isFinite);
 
-      // 2) crear evento con day_id
+      // 2) Crear evento
       const created = await eventsUC.create({
-        title,
+        title: title || "Sin título",
         status,
         day_id: day.id,
-        user_ids: userIds,
+        user_ids: ids.length ? ids : [1],
       });
 
-      // 3) navegar a detalle
       nav(`/events/${created.id}`);
-    } catch (err: any) {
-      setError(err?.message || "Error al crear evento");
+    } catch (e: any) {
+      setError(e?.message || "No se pudo crear el evento");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="max-w-xl space-y-4">
-      {error && <div className="rounded-md bg-red-100 p-2 text-red-700 text-sm">{error}</div>}
-
+    <form className="space-y-4" onSubmit={onSubmit}>
       <div>
-        <label className="block text-sm font-medium mb-1">Título</label>
+        <label className="block text-sm font-medium">Título</label>
         <input
+          className="w-full border rounded-md p-2 mt-1"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full border rounded-md p-2"
+          onChange={e => setTitle(e.target.value)}
+          placeholder="Boda Carla & Pau"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Fecha</label>
+        <label className="block text-sm font-medium">Fecha</label>
         <input
           type="date"
+          className="w-full border rounded-md p-2 mt-1"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="w-full border rounded-md p-2"
+          onChange={e => setDate(e.target.value)}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Estado</label>
+        <label className="block text-sm font-medium">Estado</label>
         <select
-          value={status as string}
-          onChange={(e) => setStatus(e.target.value as EventStatus)}
-          className="w-full border rounded-md p-2"
+          className="w-full border rounded-md p-2 mt-1"
+          value={status}
+          onChange={e => setStatus(e.target.value as EventStatus)}
         >
           <option value="reserved">Reservado</option>
           <option value="confirmed">Confirmado</option>
@@ -85,22 +80,17 @@ export default function EventForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Responsables (IDs)</label>
+        <label className="block text-sm font-medium">Responsables (IDs, coma)</label>
         <input
-          placeholder="Ej: 1,2"
-          onChange={(e) => {
-            const ids = e.target.value
-              .split(",")
-              .map((s) => parseInt(s.trim(), 10))
-              .filter((n) => !Number.isNaN(n));
-            setUserIds(ids);
-          }}
-          className="w-full border rounded-md p-2"
+          className="w-full border rounded-md p-2 mt-1"
+          value={userIds}
+          onChange={e => setUserIds(e.target.value)}
+          placeholder="1,2"
         />
-        <p className="text-xs text-gray-500 mt-1">
-          (Temporal) Sustituir por selector de usuarios/clients.
-        </p>
+        <p className="text-xs text-gray-500 mt-1">(Temporal) Sustituir por selector real.</p>
       </div>
+
+      {error && <div className="text-sm text-red-600">{error}</div>}
 
       <button disabled={loading} className="px-4 py-2 rounded-lg border disabled:opacity-50">
         {loading ? "Creando…" : "Crear evento"}

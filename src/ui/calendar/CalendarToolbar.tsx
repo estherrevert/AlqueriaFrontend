@@ -2,30 +2,36 @@ import { addMonths, format } from "date-fns";
 
 export type CalendarMode = "month" | "weekends-year";
 
-export function CalendarToolbar(props: {
+export function CalendarToolbar({
+  mode,
+  onModeChange,
+  yearMonth,
+  onYearMonthChange,
+}: {
   mode: CalendarMode;
   onModeChange: (m: CalendarMode) => void;
-  yearMonth: Date; // current pivot date
+  yearMonth: Date;
   onYearMonthChange: (d: Date) => void;
 }) {
-  const { mode, onModeChange, yearMonth, onYearMonthChange } = props;
   const ymLabel = format(yearMonth, "MMMM yyyy");
 
   return (
     <div className="flex items-center justify-between mb-3">
       <div className="inline-flex items-center gap-2">
         <button
+          className="px-2 py-1 border rounded"
           onClick={() => onYearMonthChange(addMonths(yearMonth, -1))}
-          className="px-3 py-1 bg-white border rounded"
+          aria-label="Anterior mes"
         >
-          ←
+          ◀
         </button>
-        <div className="min-w-[160px] text-center font-semibold">{ymLabel}</div>
+        <span className="min-w-[160px] text-center text-sm">{ymLabel}</span>
         <button
-          onClick={() => onYearMonthChange(addMonths(yearMonth, +1))}
-          className="px-3 py-1 bg-white border rounded"
+          className="px-2 py-1 border rounded"
+          onClick={() => onYearMonthChange(addMonths(yearMonth, 1))}
+          aria-label="Siguiente mes"
         >
-          →
+          ▶
         </button>
       </div>
 
