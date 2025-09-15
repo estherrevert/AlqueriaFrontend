@@ -1,0 +1,1 @@
+export type UserLite = { id: number; name: string };
