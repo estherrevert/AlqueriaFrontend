@@ -1,8 +1,7 @@
-import type { DaysGateway } from '@/domain/days/ports';
+import type { DaysGateway } from "@/domain/days/ports";
 
-
-export function makeDaysUseCases(gw: DaysGateway) {
-return {
-getOrCreateByDate: (dateISO: string) => gw.getOrCreateByDate(dateISO),
-};
+export function makeDaysUseCases(gateway: DaysGateway) {
+  return {
+    getOrCreate: (dateISO: string) => gateway.getOrCreate(dateISO),
+  };
 }

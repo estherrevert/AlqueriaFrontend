@@ -13,16 +13,14 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   const m = useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) =>
-      login(email, password),
-    onSuccess: (user) => {
-      qc.setQueryData(qk.me, user);
-      const to = (loc.state as any)?.from?.pathname ?? '/calendar';
-      navigate(to, { replace: true });
+    mutationFn: ({ email, password }: { email: string; password: string }) => login(email, password),
+    onSuccess: async () => {
+      // refresh /me
+      await qc.invalidateQueries({ queryKey: qk.me }).catch(() => {});
+      const from = (loc.state as any)?.from?.pathname ?? "/calendar";
+      navigate(from, { replace: true });
     },
-    onError: (e: any) => {
-      setError(e?.message ?? 'No se pudo iniciar sesión');
-    }
+    onError: (e: any) => setError(e?.message ?? "Error al iniciar sesión"),
   });
 
   const handleSubmit = (e: FormEvent) => {
@@ -33,7 +31,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen grid place-items-center p-6">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm border rounded p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm border rounded p-6 space-y-4 bg-white">
         <h1 className="text-xl font-semibold">Entrar</h1>
         <label className="block">
           <span className="text-sm">Email</span>

@@ -1,39 +1,26 @@
-import { api } from '@/shared/api/client';
-import type { EventsGateway } from '@/domain/events/ports';
-import type { EventDetail, EventSummary } from '@/domain/events/types';
-import { EventDetailDTO, EventsListDTO } from './events.schemas';
-import { toHttpError } from '@/shared/errors';
+import { api } from "@/shared/api/client";
+import type { EventsGateway } from "@/domain/events/ports";
+import type { EventDetail, EventSummary, EventStatus } from "@/domain/events/types";
 
-export class EventsHttpGateway implements EventsGateway {
-  async list(params?: { page?: number; per_page?: number; q?: string }): Promise<{ data: EventSummary[]; page: number; lastPage: number }> {
-    try {
-      const { data } = await api.get('/api/v1/events', { params });
-      const parsed = EventsListDTO.parse(data);
-      const page = parsed.meta?.current_page ?? 1;
-      const lastPage = parsed.meta?.last_page ?? 1;
-      return { data: parsed.data as unknown as EventSummary[], page, lastPage };
-    } catch (e) {
-      throw toHttpError(e);
-    }
-  }
+export const EventsHttpGateway: EventsGateway = {
+  async list(params?: { page?: number; per_page?: number; q?: string }): Promise<{ data: EventSummary[]; page: number; lastPage: number }>{
+    const res = await api.get(`/api/v1/events`, { params });
+    // Ajusta si tu backend usa otra envoltura
+    return res.data;
+  },
 
   async get(id: number): Promise<EventDetail> {
-    try {
-      const { data } = await api.get(`/api/v1/events/${id}`);
-      const payload = (data?.data ?? data);
-      return EventDetailDTO.parse(payload) as unknown as EventDetail;
-    } catch (e) {
-      throw toHttpError(e);
-    }
-  }
+    const res = await api.get(`/api/v1/events/${id}`);
+    return res.data.data as EventDetail;
+  },
 
-  async create(input: { title: string; status: 'reserved'|'confirmed'|'cancelled'; day_id: number; user_ids: number[] }): Promise<EventDetail> {
+  async create(input: { title: string; status: EventStatus; day_id: number; user_ids: number[] }): Promise<EventDetail> {
     try {
-      const { data } = await api.post('/api/v1/events', input);
-      const payload = (data?.data ?? data);
-      return EventDetailDTO.parse(payload) as unknown as EventDetail;
-    } catch (e) {
-      throw toHttpError(e);
+      const res = await api.post(`/api/v1/events`, input);
+      return res.data.data as EventDetail; // el back suele devolver { data: {...} }
+    } catch (err: any) {
+      const backendMsg = err?.response?.data?.message || err?.response?.data?.error;
+      throw new Error(backendMsg || "No se pudo crear el evento (500)");
     }
-  }
-}
+  },
+};

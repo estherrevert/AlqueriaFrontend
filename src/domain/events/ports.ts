@@ -1,4 +1,4 @@
-import type { EventDetail, EventSummary, EventStatus } from './types';
+import type { EventDetail, EventSummary, EventStatus } from "@/domain/events/types";
 
 
 export interface EventsGateway {

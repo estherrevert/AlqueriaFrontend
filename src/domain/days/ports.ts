@@ -1,4 +1,5 @@
+export type Day = { id: number; date: string };
+
 export interface DaysGateway {
-// Devuelve { id, date }
-getOrCreateByDate(dateISO: string): Promise<{ id: number; date: string }>;
+  getOrCreate(dateISO: string): Promise<Day>;
 }

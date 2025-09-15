@@ -8,7 +8,7 @@ id: z.number(),
 title: z.string().nullable().optional().default(null),
 status: z.string().nullable().optional(),
 }).passthrough();
-
+a
 
 export const TastingSummaryDTO = z.object({
 id: z.number(),

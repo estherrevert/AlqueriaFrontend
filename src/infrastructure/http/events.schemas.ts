@@ -1,9 +1,21 @@
 import { z } from 'zod';
 
+export const ClientLiteDTO = z.object({
+  id: z.number(),
+  name: z.string(),
+}).passthrough();
+
+export const CountsDTO = z.object({
+  bills: z.number().nullable().optional(),
+  seating_tables: z.number().nullable().optional(),
+  attendees: z.number().nullable().optional(),
+  menus: z.number().nullable().optional(),
+}).partial().passthrough();
+
 export const EventSummaryDTO = z.object({
   id: z.number(),
   title: z.string().nullable().optional().default(null),
-  status: z.enum(['reserved','confirmed','cancelled']),
+  status: z.enum(['reserved','confirmed','cancelled'] as const),
   date: z.string().nullable().optional(),
 }).passthrough();
 
@@ -15,22 +27,10 @@ export const EventsListDTO = z.object({
   }).optional(),
 }).passthrough();
 
-const ClientLiteDTO = z.object({
-  id: z.number(),
-  name: z.string(),
-});
-
-const CountsDTO = z.object({
-  bills: z.number().nullable().optional(),
-  seating_tables: z.number().nullable().optional(),
-  attendees: z.number().nullable().optional(),
-  menus: z.number().nullable().optional(),
-}).partial();
-
 export const EventDetailDTO = z.object({
   id: z.number(),
   title: z.string().nullable().default(null),
-  status: z.enum(['reserved','confirmed','cancelled']),
+  status: z.enum(['reserved','confirmed','cancelled'] as const),
   date: z.string().nullable().default(null),
   clients: z.array(ClientLiteDTO).optional(),
   counts: CountsDTO.optional(),

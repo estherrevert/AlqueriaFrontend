@@ -1,135 +1,109 @@
-import { useEffect, useState } from 'react';
-import type { EventStatus } from '@/domain/events/types';
-import { useQuery } from '@tanstack/react-query';
-import { DaysHttpGateway } from '@/infrastructure/http/days.gateway';
-import { makeDaysUseCases } from '@/application/days/usecases';
-import { UsersHttpGateway } from '@/infrastructure/http/users.gateway';
-import { makeUsersUseCases } from '@/application/users/usecases';
-import type { UserLite } from '@/domain/users/types';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import type { EventStatus } from "@/domain/events/types";
+import { makeEventsUseCases } from "@/application/events/usecases";
+import { EventsHttpGateway } from "@/infrastructure/http/events.gateway";
+import { makeDaysUseCases } from "@/application/days/usecases";
+import { DaysHttpGateway } from "@/infrastructure/http/days.gateway";
 
-const days = makeDaysUseCases(new DaysHttpGateway());
-const users = makeUsersUseCases(new UsersHttpGateway());
+// factories sobre gateways (objetos, no clases)
+const eventsUC = makeEventsUseCases(EventsHttpGateway);
+const daysUC = makeDaysUseCases(DaysHttpGateway);
 
-export type EventFormValues = {
-  title: string;
-  status: EventStatus;
-  dayId: number;
-  userIds: number[];
-};
+export default function EventForm() {
+  const nav = useNavigate();
+  const [title, setTitle] = useState("");
+  const [status, setStatus] = useState<EventStatus>("reserved" as EventStatus);
+  const [date, setDate] = useState(""); // YYYY-MM-DD
+  const [userIds, setUserIds] = useState<number[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export function EventForm({
-  onSubmit,
-  isSubmitting,
-}: {
-  onSubmit: (v: EventFormValues) => void;
-  isSubmitting: boolean;
-}) {
-  const [title, setTitle] = useState('');
-  const [status, setStatus] = useState<EventStatus>('reserved');
-  const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [dayId, setDayId] = useState<number | null>(null);
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      if (!title.trim()) throw new Error("Título requerido");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Fecha inválida (YYYY-MM-DD)");
+      if (!userIds.length) throw new Error("Selecciona al menos un responsable");
 
-  const [term, setTerm] = useState('');
-  const [selected, setSelected] = useState<number[]>([]);
+      // 1) garantizar Day
+      const day = await daysUC.getOrCreate(date);
 
-  // Resolver/crear Day por fecha
-  const qDay = useQuery({
-    queryKey: ['day', date],
-    queryFn: () => days.getOrCreateByDate(date),
-  });
-  useEffect(() => {
-    if (qDay.data?.id) setDayId(qDay.data.id);
-  }, [qDay.data]);
+      // 2) crear evento con day_id
+      const created = await eventsUC.create({
+        title,
+        status,
+        day_id: day.id,
+        user_ids: userIds,
+      });
 
-  // Buscar usuarios (clientes)
-  const qUsers = useQuery({
-    queryKey: ['users', term],
-    queryFn: () => users.list({ q: term, per_page: 10 }).then((r) => r.data),
-    enabled: term.trim().length >= 1,
-    initialData: [] as UserLite[],
-  });
-
-  const toggleUser = (u: UserLite) => {
-    setSelected((prev) => (prev.includes(u.id) ? prev.filter((id) => id !== u.id) : [...prev, u.id]));
-  };
-
-  const canSubmit = !!title.trim() && !!dayId && selected.length >= 1;
+      // 3) navegar a detalle
+      nav(`/events/${created.id}`);
+    } catch (err: any) {
+      setError(err?.message || "Error al crear evento");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <form
-      className="space-y-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (!canSubmit) return;
-        onSubmit({
-          title,
-          status,
-          dayId: dayId!,
-          userIds: selected,
-        });
-      }}
-    >
-      <div className="space-y-1">
-        <label className="block text-sm font-medium">Título</label>
+    <form onSubmit={onSubmit} className="max-w-xl space-y-4">
+      {error && <div className="rounded-md bg-red-100 p-2 text-red-700 text-sm">{error}</div>}
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Título</label>
         <input
-          className="w-full border rounded px-3 py-2"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Boda Carla & Pau"
+          className="w-full border rounded-md p-2"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <label className="block text-sm font-medium">Fecha</label>
-          <input type="date" className="w-full border rounded px-3 py-2" value={date} onChange={(e) => setDate(e.target.value)} />
-          {qDay.isLoading && <p className="text-xs text-gray-500">Buscando/creando día…</p>}
-          {qDay.isError && <p className="text-xs text-red-600">No se pudo resolver el día.</p>}
-        </div>
-        <div className="space-y-1">
-          <label className="block text-sm font-medium">Estado</label>
-          <select
-            className="w-full border rounded px-3 py-2"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as EventStatus)}
-          >
-            <option value="reserved">Reservado</option>
-            <option value="confirmed">Confirmado</option>
-            <option value="cancelled">Cancelado</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Clientes existentes</label>
+      <div>
+        <label className="block text-sm font-medium mb-1">Fecha</label>
         <input
-          className="w-full border rounded px-3 py-2"
-          placeholder="Busca por nombre…"
-          value={term}
-          onChange={(e) => setTerm(e.target.value)}
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="w-full border rounded-md p-2"
         />
-        <div className="border rounded divide-y max-h-48 overflow-auto">
-          {(qUsers.data ?? []).map((u) => (
-            <label key={u.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer">
-              <input type="checkbox" checked={selected.includes(u.id)} onChange={() => toggleUser(u)} />
-              <span>{u.name}</span>
-            </label>
-          ))}
-          {term && qUsers.data?.length === 0 && !qUsers.isLoading && (
-            <div className="px-3 py-2 text-sm text-gray-500">Sin resultados.</div>
-          )}
-        </div>
-        <p className="text-xs text-gray-500">
-          * De momento solo puedes asignar clientes ya existentes. La API aún no tiene endpoint para crear clientes desde aquí.
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Estado</label>
+        <select
+          value={status as string}
+          onChange={(e) => setStatus(e.target.value as EventStatus)}
+          className="w-full border rounded-md p-2"
+        >
+          <option value="reserved">Reservado</option>
+          <option value="confirmed">Confirmado</option>
+          <option value="cancelled">Cancelado</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Responsables (IDs)</label>
+        <input
+          placeholder="Ej: 1,2"
+          onChange={(e) => {
+            const ids = e.target.value
+              .split(",")
+              .map((s) => parseInt(s.trim(), 10))
+              .filter((n) => !Number.isNaN(n));
+            setUserIds(ids);
+          }}
+          className="w-full border rounded-md p-2"
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          (Temporal) Sustituir por selector de usuarios/clients.
         </p>
       </div>
 
-      <button
-        type="submit"
-        disabled={!canSubmit || isSubmitting}
-        className="rounded bg-emerald-600 text-white px-4 py-2 disabled:opacity-60"
-      >
-        {isSubmitting ? 'Guardando…' : 'Crear evento'}
+      <button disabled={loading} className="px-4 py-2 rounded-lg border disabled:opacity-50">
+        {loading ? "Creando…" : "Crear evento"}
       </button>
     </form>
   );
