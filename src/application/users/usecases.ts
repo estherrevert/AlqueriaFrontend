@@ -1,14 +1,19 @@
-import { EventsHttpGateway } from "@/infrastructure/http/events.gateway";
+import type { UsersGateway } from "@/infrastructure/http/users.gateway";
+import { UsersHttpGateway } from "@/infrastructure/http/users.gateway";
+import type { CreateUserPayload, UserLite } from "@/domain/users/types";
 
-export async function createEventUseCase(input: {
-  title: string;
-  status: "reserved" | "confirmed" | "cancelled";
-  date: string; // YYYY-MM-DD
-  user_ids: number[];
-}) {
-  if (!input.user_ids?.length) throw new Error("Selecciona al menos un responsable");
-  if (!input.title?.trim()) throw new Error("Título requerido");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date)) throw new Error("Fecha inválida (YYYY-MM-DD)");
+// Permite pasar clase (constructor) o instancia.
+type UsersGatewayCtor = new () => UsersGateway;
 
-  return await EventsHttpGateway.create(input);
+export function makeUsersUseCases(gatewayLike?: UsersGateway | UsersGatewayCtor) {
+  const gw: UsersGateway =
+    !gatewayLike ? new UsersHttpGateway()
+    : typeof gatewayLike === "function"
+      ? new (gatewayLike as UsersGatewayCtor)()
+      : (gatewayLike as UsersGateway);
+
+  return {
+    search: (q: string): Promise<UserLite[]> => gw.search({ q, limit: 25 }),
+    create: (payload: CreateUserPayload): Promise<UserLite> => gw.create(payload),
+  };
 }

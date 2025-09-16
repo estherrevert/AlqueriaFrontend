@@ -1,15 +1,22 @@
-import type { UsersGateway } from '@/domain/users/ports';
-import type { UserLite } from '@/domain/users/types';
-import { api } from '@/shared/api/client';
+import { api } from "@/shared/api/client";
+import type { CreateUserPayload, UserLite } from "@/domain/users/types";
+
+export interface UsersGateway {
+  search(params?: { q?: string; limit?: number }): Promise<UserLite[]>;
+  create(payload: CreateUserPayload): Promise<UserLite>;
+}
 
 export class UsersHttpGateway implements UsersGateway {
-  async list(params?: { q?: string; per_page?: number; page?: number }) {
-    const { data } = await api.get('/api/v1/users', { params });
-    return data as { data: UserLite[]; page?: number; lastPage?: number };
+  async search(params?: { q?: string; limit?: number }): Promise<UserLite[]> {
+    const { data } = await api.get("/api/v1/users", { params });
+    // API Resource collection → { data: [...] }
+    const list = Array.isArray(data?.data) ? data.data : data;
+    return list as UserLite[];
   }
 
-  async create(input: { name: string; role?: 'client' | 'staff' | 'admin' }): Promise<UserLite> {
-    const { data } = await api.post('/api/v1/users', input);
-    return (data?.data ?? data) as UserLite;
+  async create(payload: CreateUserPayload): Promise<UserLite> {
+    const { data } = await api.post("/api/v1/users", payload);
+    const item = data?.data ?? data;
+    return item as UserLite;
   }
 }
