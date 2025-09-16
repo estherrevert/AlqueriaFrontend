@@ -1,111 +1,132 @@
-import React, { useMemo } from "react";
+import React from "react";
 import {
   addDays, endOfMonth, endOfWeek, format, isSameMonth, isToday,
   startOfMonth, startOfWeek
 } from "date-fns";
 import { es } from "date-fns/locale";
 import type { DayDTO } from "@/infrastructure/http/calendar.schemas";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-type Props = {
-  days?: DayDTO[];
-  pivotDate: Date; // primer día visible se calcula a partir de aquí
-};
+type Props = { days?: DayDTO[]; pivotDate: Date };
 
 const WEEKDAYS = ["L", "M", "X", "J", "V", "S", "D"];
 
-// Color del evento según estado
-function eventBg(status?: string | null) {
+function statusBg(status?: string | null) {
   switch (status) {
-    case "confirmed": return "bg-green-500";
-    case "reserved":  return "bg-yellow-400";
-    default:          return "bg-gray-300";
+    case "confirmed":
+      return "bg-green-100 text-green-800 border border-green-200";
+    case "reserved":
+      return "bg-yellow-100 text-yellow-800 border border-yellow-200";
+    case "cancelled":
+      return "bg-gray-100 text-gray-600 border border-gray-200 line-through";
+    default:
+      return "bg-slate-100 text-slate-700 border border-slate-200";
   }
 }
 
-const DayCell = React.memo(function DayCell({
-  date, dto, outside, today,
-}: {
+type DayCellProps = {
   date: Date;
-  dto?: DayDTO;
-  outside: boolean;
-  today: boolean;
-}) {
-  const iso = format(date, "yyyy-MM-dd", { locale: es });
-  const dayNum = format(date, "d", { locale: es });
+  dto?: DayDTO | null;
+  outside?: boolean;
+  today?: boolean;
+};
 
-  const events = (dto?.events ?? []).filter(e => e?.status !== "cancelled");
+function DayCell({ date, dto, outside, today }: DayCellProps) {
+  const navigate = useNavigate();
+  const iso = format(date, "yyyy-MM-dd");
 
-  // Prioriza count; fallback a array si existiera
-  const tastingsCount = typeof dto?.tastings_count === "number"
-    ? dto!.tastings_count!
-    : Array.isArray(dto?.tastings) ? dto!.tastings!.length : 0;
+  const events = dto?.events ?? [];
+  const tastingsCount =
+    (dto?.tastings_count ?? (dto as any)?.tastings?.length ?? 0) as number;
+  const isBlocked = !!(dto as any)?.is_blocked;
+
+  // Solo se puede crear evento si NO hay nada (ni eventos, ni catas, ni bloqueo)
+  const canQuickCreate = !isBlocked && events.length === 0 && tastingsCount === 0;
+
+  const handleCellClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    // si pulsas sobre un enlace de evento, dejamos que el <Link> haga su navegación
+    if ((e.target as HTMLElement)?.closest("a")) return;
+    if (canQuickCreate) navigate(`/events/new?date=${iso}`);
+  };
 
   return (
     <div
-      data-iso={iso}
-      className={`relative min-h-[78px] rounded border p-1 overflow-hidden
-        ${outside ? "bg-gray-50 text-gray-400" : "bg-white"}
-        ${today ? "ring-2 ring-blue-500" : ""}`}
+      onClick={handleCellClick}
+      className={[
+        "relative min-h-24 rounded-lg border p-1.5 transition",
+        outside ? "bg-gray-50 text-gray-400" : "bg-white",
+        today ? "ring-2 ring-emerald-500" : "",
+        canQuickCreate ? "cursor-pointer hover:border-emerald-400/70" : "cursor-default",
+      ].join(" ")}
+      role={canQuickCreate ? "button" : undefined}
+      tabIndex={canQuickCreate ? 0 : -1}
+      aria-label={canQuickCreate ? `Crear evento el ${iso}` : undefined}
     >
-      <div className="text-[11px] font-medium">{dayNum}</div>
+      {/* Cabecera: día + chips */}
+      <div className="relative z-10 flex items-center justify-between mb-1">
+        <span className="text-[10px] font-medium">{format(date, "d", { locale: es })}</span>
+        <div className="flex items-center gap-1">
+          {tastingsCount > 0 && (
+            <span className="px-1 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200 text-[10px]">
+              {tastingsCount} cata{tastingsCount > 1 ? "s" : ""}
+            </span>
+          )}
+          {isBlocked && (
+            <span className="px-1 py-0.5 rounded bg-blue-200 text-blue-900 border border-blue-300 text-[10px]">
+              Bloqueado
+            </span>
+          )}
+        </div>
+      </div>
 
-      {/* Chips de eventos */}
-      <div className="mt-1 space-y-1">
-        {events.slice(0, 3).map((ev) => (
+      {/* Overlay del bloqueo: visible y sin capturar clicks */}
+      {isBlocked && (
+        <div className="absolute inset-0 z-0 pointer-events-none rounded-lg bg-blue-200/45" />
+      )}
+
+      {/* Eventos (cada uno navega a /events/:id) */}
+      <div className="space-y-1 relative z-10">
+        {events.slice(0, 3).map((e) => (
           <Link
-            key={ev.id}
-            to={`/events/${ev.id}`}
-            className={`block truncate text-[11px] text-white px-2 py-[2px] rounded ${eventBg(ev.status)}`}
-            title={ev.title ?? `Evento #${ev.id}`}
+            key={e.id}
+            to={`/events/${e.id}`}        
+            className={[
+              "block text-[11px] truncate rounded px-1 py-0.5",
+              statusBg((e as any)?.status ?? undefined),
+            ].join(" ")}
+            title={`${e.title ?? "Evento"} — ${(e as any)?.status ?? ""}`}
           >
-            {ev.title ?? `Evento #${ev.id}`}
+            {e.title ?? "(sin título)"}
           </Link>
         ))}
         {events.length > 3 && (
-          <div className="text-[10px] text-gray-500">+{events.length - 3} más</div>
+          <div className="text-[10px] text-slate-500">+{events.length - 3} más</div>
         )}
       </div>
-
-      {/* Badge de catas (morada) */}
-      {tastingsCount > 0 && (
-        <div className="absolute bottom-1 right-1">
-          <span className="inline-flex items-center justify-center text-[10px] px-1.5 py-[2px] rounded bg-purple-600 text-white">
-            Catas: {tastingsCount}
-          </span>
-        </div>
-      )}
     </div>
   );
-});
+}
 
-export default function MonthGrid({ days = [], pivotDate }: Props) {
+export default function MonthGrid({ days, pivotDate }: Props) {
   const monthStart = startOfMonth(pivotDate);
-  const monthEnd   = endOfMonth(pivotDate);
-  const gridStart  = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const gridEnd    = endOfWeek(monthEnd, { weekStartsOn: 1 });
-
-  const byDate = useMemo(() => {
-    const m = new Map<string, DayDTO>();
-    for (const d of days) m.set(d.date, d);
-    return m;
-  }, [days]);
+  const monthEnd = endOfMonth(pivotDate);
+  const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
 
   const header = (
-    <div className="grid grid-cols-7 text-[11px] font-medium text-gray-500 px-1">
+    <div className="grid grid-cols-7 gap-1 text-[11px] text-slate-500">
       {WEEKDAYS.map((d) => (
-        <div key={d} className="py-1 text-center">{d}</div>
+        <div key={d} className="text-center">{d}</div>
       ))}
     </div>
   );
 
   const cells: React.ReactNode[] = [];
   for (let c = gridStart; c <= gridEnd; c = addDays(c, 1)) {
-    const iso = format(c, "yyyy-MM-dd", { locale: es });
-    const dto = byDate.get(iso);
+    const dto = days?.find((x) => x.date === format(c, "yyyy-MM-dd"));
     cells.push(
       <DayCell
-        key={iso}
+        key={c.toISOString()}
         date={c}
         dto={dto}
         outside={!isSameMonth(c, monthStart)}

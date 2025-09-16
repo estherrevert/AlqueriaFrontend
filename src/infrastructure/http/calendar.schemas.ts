@@ -20,6 +20,7 @@ export const DayDTO = z.object({
   // preferimos count; mantenemos fallback para compatibilidad
   tastings_count: z.number().optional().default(0),
   tastings: z.array(TastingSummaryDTO).optional().default([]),
+  is_blocked: z.boolean().optional().default(false),
 });
 
 export const CalendarDaysResponse = z.array(DayDTO);

@@ -19,4 +19,5 @@ export type DayBucket = {
 date: string; // YYYY-MM-DD
 events: EventSummary[];
 tastings: TastingSummary[];
+is_blocked?: boolean;
 };

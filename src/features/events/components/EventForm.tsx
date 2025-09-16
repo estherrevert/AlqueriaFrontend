@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { EventStatus } from "@/domain/events/types";
 import { makeEventsUseCases } from "@/application/events/usecases";
@@ -12,93 +12,74 @@ import NewUserModal from "@/features/events/components/NewUserModal";
 const eventsUC = makeEventsUseCases(EventsHttpGateway);
 const daysUC = makeDaysUseCases();
 
-export default function EventForm() {
+type Props = { initialDate?: string };
+
+export default function EventForm({ initialDate }: Props) {
   const nav = useNavigate();
+
   const [title, setTitle] = useState("");
-  const [status, setStatus] = useState<EventStatus>("reserved" as EventStatus);
-  const [date, setDate] = useState<string>("");
-  const [selectedUsers, setSelectedUsers] = useState<UserLite[]>([]);
+  const [status, setStatus] = useState<EventStatus>("reserved");
+  const [date, setDate] = useState<string>(initialDate ?? "");
+  const [users, setUsers] = useState<UserLite[]>([]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // modal crear usuario
   const [newUserOpen, setNewUserOpen] = useState(false);
   const [prefillName, setPrefillName] = useState("");
 
-  async function onSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    if (initialDate) setDate(initialDate);
+  }, [initialDate]);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     try {
-      setLoading(true);
       if (!date) throw new Error("Selecciona una fecha");
+      if (!title?.trim()) throw new Error("Pon un título");
+      setLoading(true);
 
-      // 1) Day: GET ?date, si no existe -> POST /days
       const day = await daysUC.getOrCreate(date);
-
-      // 2) Crear evento
-      const ids = selectedUsers.map(u => u.id);
-      const payload: any = {
-        title: title?.trim() || "Sin título",
+      const created = await eventsUC.create({
+        title: title.trim(),
         status,
         day_id: day.id,
-      };
-      // Si necesitas enviar la fecha explícita:
-      payload.date = date;
+        user_ids: users.map(u => u.id),
+      });
 
-      if (ids.length > 0) payload.user_ids = ids;
-      // si deseas el fallback:
-      // if (ids.length === 0) payload.user_ids = [1];
-
-      const created = await eventsUC.create(payload);
-      const eventId = created?.id ?? created?.data?.id ?? created?.data?.data?.id;
-      if (eventId) nav(`/events/${eventId}`);
-      else nav(`/events/${created.id}`);
-    } catch (e: any) {
-      setError(e?.message || "No se pudo crear el evento");
+      nav(`/events/${created.id}`);
+    } catch (err: any) {
+      setError(err?.message || "No se pudo crear el evento");
     } finally {
       setLoading(false);
     }
   }
 
-  function openCreateUser(prefill: string) {
-    setPrefillName(prefill);
-    setNewUserOpen(true);
-  }
-
   function handleUserCreated(u: UserLite) {
-    setSelectedUsers(prev => {
-      if (prev.find(p => p.id === u.id)) return prev;
-      return [...prev, u];
-    });
+    setUsers(prev => prev.some(x => x.id === u.id) ? prev : [...prev, u]);
+    setNewUserOpen(false);
+    setPrefillName("");
   }
 
   return (
-    <div className="max-w-2xl">
-      <form className="space-y-4" onSubmit={onSubmit}>
+    <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium">Título</label>
+          <label className="block text-sm font-medium mb-1">Título</label>
           <input
-            className="w-full border rounded-md p-2 mt-1"
+            type="text"
+            className="w-full rounded-lg border px-3 py-2"
+            placeholder="Boda Laura & Dani"
             value={title}
             onChange={e => setTitle(e.target.value)}
-            placeholder="Boda Carla & Pau"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Fecha</label>
-          <input
-            type="date"
-            className="w-full border rounded-md p-2 mt-1"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium">Estado</label>
+          <label className="block text-sm font-medium mb-1">Estado</label>
           <select
-            className="w-full border rounded-md p-2 mt-1"
+            className="w-full rounded-lg border px-3 py-2"
             value={status}
             onChange={e => setStatus(e.target.value as EventStatus)}
           >
@@ -108,12 +89,37 @@ export default function EventForm() {
           </select>
         </div>
 
-        <UserSearchSelect
-          selected={selectedUsers}
-          onChange={setSelectedUsers}
-          onCreateRequest={openCreateUser}
-          label="Personas vinculadas"
-        />
+        <div>
+          <label className="block text-sm font-medium mb-1">Fecha</label>
+          <input
+            type="date"
+            className="w-full rounded-lg border px-3 py-2"
+            value={date}
+            onChange={e => setDate(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-sm font-medium">Personas vinculadas</label>
+            <button
+              type="button"
+              className="text-sm rounded-md border px-2 py-1 hover:bg-gray-50"
+              onClick={() => { setPrefillName(""); setNewUserOpen(true); }}
+            >
+              + Añadir
+            </button>
+          </div>
+
+          <UserSearchSelect
+            selected={users}
+            onChange={setUsers}
+            label="Buscar persona"
+            placeholder="Escribe un nombre o email…"
+            showCreateInDropdown={false}
+            onCreateRequest={(name) => { setPrefillName(name); setNewUserOpen(true); }}
+          />
+        </div>
 
         {error && <div className="text-sm text-red-600">{error}</div>}
 

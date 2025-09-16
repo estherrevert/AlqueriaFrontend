@@ -27,4 +27,12 @@ export const DaysHttpGateway = {
     const r = await api.get<DaysListResponseDTO>("/api/v1/days", { params });
     return r?.data?.data ?? [];
   },
+
+  async block(dayId: number): Promise<void> {
+    await api.patch(`/api/v1/days/${dayId}/block`);
+  },
+
+  async unblock(dayId: number): Promise<void> {
+    await api.patch(`/api/v1/days/${dayId}/unblock`);
+  },
 };
