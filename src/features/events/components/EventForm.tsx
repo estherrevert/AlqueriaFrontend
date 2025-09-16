@@ -4,10 +4,11 @@ import type { EventStatus } from "@/domain/events/types";
 import { makeEventsUseCases } from "@/application/events/usecases";
 import { EventsHttpGateway } from "@/infrastructure/http/events.gateway";
 import { makeDaysUseCases } from "@/application/days/usecases";
-
 import type { UserLite } from "@/domain/users/types";
 import UserSearchSelect from "@/features/events/components/UserSearchSelect";
 import NewUserModal from "@/features/events/components/NewUserModal";
+import CalendarField from "@/features/events/components/CalendarField";
+
 
 const eventsUC = makeEventsUseCases(EventsHttpGateway);
 const daysUC = makeDaysUseCases();
@@ -91,14 +92,9 @@ export default function EventForm({ initialDate }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Fecha</label>
-          <input
-            type="date"
-            className="w-full rounded-lg border px-3 py-2"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-          />
-        </div>
+  <label className="block text-sm font-medium mb-1">Fecha</label>
+  <CalendarField value={date} onChange={setDate} />
+</div>
 
         <div>
           <div className="flex items-center justify-between mb-1">

@@ -68,11 +68,11 @@ function DayCell({ date, dto, outside, today }: DayCellProps) {
         <div className="flex items-center gap-1">
           {tastingsCount > 0 && (
             <span className="px-1 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200 text-[10px]">
-              {tastingsCount} cata{tastingsCount > 1 ? "s" : ""}
+               Pruebas de menú ({tastingsCount})
             </span>
           )}
           {isBlocked && (
-            <span className="px-1 py-0.5 rounded bg-blue-200 text-blue-900 border border-blue-300 text-[10px]">
+            <span className="px-1 py-0.5 rounded bg-red-200 text-red-900 border border-red-300 text-[10px]">
               Bloqueado
             </span>
           )}
@@ -81,7 +81,7 @@ function DayCell({ date, dto, outside, today }: DayCellProps) {
 
       {/* Overlay del bloqueo: visible y sin capturar clicks */}
       {isBlocked && (
-        <div className="absolute inset-0 z-0 pointer-events-none rounded-lg bg-blue-200/45" />
+        <div className="absolute inset-0 z-0 pointer-events-none rounded-lg bg-red-200/45" />
       )}
 
       {/* Eventos (cada uno navega a /events/:id) */}
