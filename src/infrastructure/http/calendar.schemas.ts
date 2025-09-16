@@ -17,7 +17,9 @@ export const TastingSummaryDTO = z.object({
 export const DayDTO = z.object({
   date: z.string(),
   events: z.array(EventSummaryDTO).default([]),
-  tastings: z.array(TastingSummaryDTO).default([]),
+  // preferimos count; mantenemos fallback para compatibilidad
+  tastings_count: z.number().optional().default(0),
+  tastings: z.array(TastingSummaryDTO).optional().default([]),
 });
 
 export const CalendarDaysResponse = z.array(DayDTO);

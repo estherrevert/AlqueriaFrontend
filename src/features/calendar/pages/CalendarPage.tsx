@@ -1,84 +1,48 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { addMonths, startOfMonth, endOfMonth } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
 import { CalendarToolbar, type CalendarMode } from "@/ui/calendar/CalendarToolbar";
+import Legend from "@/ui/calendar/Legend";
 import MonthGrid from "@/ui/calendar/MonthGrid";
 import WeekendsYear from "@/ui/calendar/WeekendsYear";
-import type { DayDTO } from "@/infrastructure/http/calendar.schemas";
-import { makeDaysUseCases } from "@/application/days/usecases";
-import { api } from "@/shared/api/client";
+import { CalendarHttpGateway } from "@/infrastructure/http/calendar.gateway";
+import { makeGetDaysUseCase } from "@/application/calendar/usecases";
 
-const iso = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-
-function rangeFor(mode: CalendarMode, pivot: Date) {
-  const y = pivot.getFullYear();
-  const m = pivot.getMonth();
-  if (mode === "month") {
-    const from = iso(new Date(y, m, 1));
-    const to = iso(new Date(y, m + 1, 0));
-    return { from, to, weekendsOnly: false };
-  }
-  return { from: `${y}-01-01`, to: `${y}-12-31`, weekendsOnly: true };
-}
-
-type OverlayBucket = { date: string; events?: any[]; tastings?: any[] };
+const getDays = makeGetDaysUseCase(new CalendarHttpGateway());
 
 export default function CalendarPage() {
   const [mode, setMode] = useState<CalendarMode>("month");
-  const [pivot, setPivot] = useState(new Date());
-  const [days, setDays] = useState<DayDTO[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [pivot, setPivot] = useState(() => new Date());
 
-  const query = useMemo(() => rangeFor(mode, pivot), [mode, pivot]);
-  const daysUC = useMemo(() => makeDaysUseCases(), []);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    (async () => {
-      try {
-        // 1) Esqueleto desde el back (todas las fechas)
-        let skeleton = await daysUC.getRange(query.from, query.to); // [{id,date}, ...]
-        if (query.weekendsOnly) {
-          skeleton = skeleton.filter((d) => {
-            const dt = new Date(d.date);
-            const dow = dt.getDay(); // 0 dom, 6 sáb
-            return dow === 0 || dow === 6;
-          });
-        }
-
-        // 2) Overlay (solo días con eventos/catas)
-        const r = await api.get<OverlayBucket[]>("/api/v1/calendar/days", {
-          params: { from: query.from, to: query.to },
-        });
-        const overlay = Array.isArray(r?.data) ? r.data : [];
-        const byDate = new Map<string, OverlayBucket>();
-        overlay.forEach((b) => byDate.set(String(b.date), b));
-
-        // 3) Fusión
-        const completed: DayDTO[] = skeleton.map((d) => {
-          const bucket = byDate.get(d.date);
-          return {
-            date: d.date,
-            events: Array.isArray(bucket?.events) ? bucket!.events : [],
-            tastings: Array.isArray(bucket?.tastings) ? bucket!.tastings : [],
-          };
-        });
-
-        if (!cancelled) setDays(completed);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message || "No se pudo cargar el calendario");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
+  const queryParams = useMemo(() => {
+    if (mode === "month") {
+      const from = startOfMonth(pivot);
+      const to = endOfMonth(pivot);
+      return {
+        from: from.toISOString().slice(0, 10),
+        to: to.toISOString().slice(0, 10),
+        weekends: false,
+        year: pivot.getFullYear(),
+        pivot,
+      };
+    }
+    // weekends-year: todo el año, solo findes (backend ya filtra)
+    const y = pivot.getFullYear();
+    return {
+      from: `${y}-01-01`,
+      to: `${y}-12-31`,
+      weekends: true,
+      year: y,
+      pivot,
     };
-  }, [query.from, query.to, query.weekendsOnly, daysUC]);
+  }, [mode, pivot]);
+
+  const { data: days = [], isPending, isFetching, error } = useQuery({
+    queryKey: ["calendar", "days", queryParams.from, queryParams.to, queryParams.weekends],
+    queryFn: () => getDays({ from: queryParams.from, to: queryParams.to, weekends: queryParams.weekends }),
+    staleTime: 5 * 60 * 1000,
+    keepPreviousData: true,
+  });
 
   return (
     <div className="space-y-4">
@@ -86,13 +50,19 @@ export default function CalendarPage() {
         mode={mode}
         onModeChange={setMode}
         yearMonth={pivot}
-        onYearMonthChange={setPivot}
+        onYearMonthChange={(d) => setPivot(d)}
       />
+      <Legend />
 
-      {loading && <div className="text-sm text-gray-500">Cargando calendario…</div>}
-      {error && <div className="text-sm text-red-600">{error}</div>}
+      {isPending && <div className="text-sm text-gray-500">Cargando calendario…</div>}
+      {error && <div className="text-sm text-red-600">Error al cargar calendario</div>}
+      {!isPending && isFetching && <div className="text-xs text-gray-400">Actualizando…</div>}
 
-      {mode === "month" ? <MonthGrid days={days} /> : <WeekendsYear days={days} />}
+      {mode === "month" ? (
+        <MonthGrid days={days as any} pivotDate={queryParams.pivot} />
+      ) : (
+        <WeekendsYear days={days as any} year={queryParams.year} />
+      )}
     </div>
   );
 }
