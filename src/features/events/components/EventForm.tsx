@@ -73,6 +73,7 @@ export default function EventForm({ initialDate }: Props) {
             placeholder="Boda Laura & Dani"
             value={title}
             onChange={e => setTitle(e.target.value)}
+            required
           />
         </div>
 

@@ -19,3 +19,11 @@ export function toHttpError(e: unknown): HttpError {
   }
   return new HttpError(String(e), 0);
 }
+
+export function extractFieldErrors(data: unknown): Record<string, string[]> {
+  if (data && typeof data === "object" && "errors" in (data as any)) {
+    const e = (data as any).errors;
+    if (e && typeof e === "object") return e as Record<string, string[]>;
+  }
+  return {};
+}
