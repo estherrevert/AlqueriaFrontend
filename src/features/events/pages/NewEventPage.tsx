@@ -10,7 +10,7 @@ export default function NewEventPage() {
     <div className="max-w-3xl mx-auto p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Nuevo evento</h1>
-        <button onClick={() => navigate(-1)} className="text-sm underline">Volver</button>
+        <button onClick={() => navigate(-1)} className="px-3 py-1.5  rounded-lg text-sm underline bg-primary text-white">Volver</button>
       </div>
       <EventForm initialDate={initialDate} />
     </div>

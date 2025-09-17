@@ -35,8 +35,8 @@ export default function DayCell({
     if (canQuickCreate) navigate(`/events/new?date=${iso}`);
   };
 
-  // ⬇️ compact ahora es más alto (min-h-20)
-  const base = size === "compact" ? "min-h-20 p-2 rounded-lg" : "min-h-24 p-1.5 rounded-xl";
+  const radius = size === "compact" ? "rounded-lg" : "rounded-xl";
+  const base = `${size === "compact" ? "min-h-20 p-2" : "min-h-24 p-1.5"} ${radius}`;
   const eventText = size === "compact" ? "text-[11px]" : "text-[12px]";
   const badgeText = "text-[10px]";
 
@@ -62,7 +62,7 @@ export default function DayCell({
       aria-label={canQuickCreate ? `Crear evento el ${iso}` : undefined}
     >
       {overlay && (
-        <div className={`absolute inset-0 z-0 pointer-events-none rounded-lg ${overlay}`} />
+        <div className={`absolute inset-0 z-0 pointer-events-none ${radius} ${overlay}`} />
       )}
 
       {/* Header: número de día + chips (tastings/bloqueo) */}
