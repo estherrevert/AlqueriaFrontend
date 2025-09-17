@@ -137,7 +137,7 @@ export default function CalendarField({ value, onChange }: Props) {
           <span className="inline-block h-3 w-3 rounded" style={{ backgroundColor: "#FCD34D" }}></span> Evento
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded" style={{ backgroundColor: "#E9D5FF" }}></span> Cata
+          <span className="inline-block h-3 w-3 rounded" style={{ backgroundColor: "#E9D5FF" }}></span> Pruebas menú
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="inline-block h-3 w-3 rounded" style={{ backgroundColor: "#BBF7D0" }}></span> Libre

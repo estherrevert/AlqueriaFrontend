@@ -1,170 +1,62 @@
+// src/ui/calendar/MonthGrid.tsx
 import React from "react";
 import {
-  addDays, endOfMonth, endOfWeek, format, isSameMonth, isToday,
-  startOfMonth, startOfWeek
+  addDays,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isToday,
+  startOfMonth,
+  startOfWeek,
 } from "date-fns";
-import { es } from "date-fns/locale";
 import type { DayDTO } from "@/infrastructure/http/calendar.schemas";
-import { Link, useNavigate } from "react-router-dom";
+import DayCell from "./DayCell";
+import { WEEKDAYS } from "./shared";
 
 type Props = { days?: DayDTO[]; pivotDate: Date };
 
-const WEEKDAYS = ["L", "M", "X", "J", "V", "S", "D"];
+export default function MonthGrid({ days = [], pivotDate }: Props) {
+  const byDate = React.useMemo(() => {
+    const m = new Map<string, DayDTO>();
+    for (const d of days) m.set(d.date, d);
+    return m;
+  }, [days]);
 
-/** Estilos de la pill del evento (no cambia la lógica) */
-function statusBg(status?: string | null) {
-  switch (status) {
-    case "confirmed":
-      return "bg-emerald-100 text-emerald-800 border border-emerald-200";
-    case "reserved":
-      return "bg-yellow-100 text-yellow-800 border border-yellow-200";
-    case "cancelled":
-      return "bg-gray-100 text-gray-500 border border-gray-200 line-through";
-    default:
-      return "bg-slate-100 text-slate-700 border border-slate-200";
-  }
-}
-
-type DayCellProps = {
-  date: Date;
-  dto?: DayDTO | null;
-  outside?: boolean;
-  today?: boolean;
-};
-
-function DayCell({ date, dto, outside, today }: DayCellProps) {
-  const navigate = useNavigate();
-  const iso = format(date, "yyyy-MM-dd");
-
-  const events = dto?.events ?? [];
-  const tastingsCount =
-    (dto?.tastings_count ?? (dto as any)?.tastings?.length ?? 0) as number;
-  const isBlocked = !!(dto as any)?.is_blocked;
-
-  // Crear solo si está vacío (sin eventos, sin catas, sin bloqueo)
-  const canQuickCreate = !isBlocked && events.length === 0 && tastingsCount === 0;
-
-  const handleCellClick: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    if ((e.target as HTMLElement)?.closest("a")) return;
-    if (canQuickCreate) navigate(`/events/new?date=${iso}`);
-  };
-
-  // --- Solo estilos (overlay del día con eventos):
-  const hasEvents = events.length > 0;
-  const hasTastings = tastingsCount > 0;
-  const hasConfirmed = events.some((ev: any) => ev?.status === "confirmed");
-  const hasReserved = events.some((ev: any) => ev?.status === "reserved");
-
-  const blockedBg = "bg-red-200/45 ring-1 ring-red-300/70";
-  const tastingBg = "bg-purple-200/40 ring-1 ring-purple-300/50";
-  const eventBgConfirmed = "bg-emerald-100/60 ring-1 ring-emerald-200/70";
-  const eventBgReserved  = "bg-yellow-100/60 ring-1 ring-yellow-200/70";
-
-  return (
-    <div
-      onClick={handleCellClick}
-      className={[
-        "relative min-h-24 rounded-xl border p-1.5 transition shadow-[inset_0_0_0_1px_rgba(0,0,0,0.02)]",
-        outside ? "bg-gray-50 text-gray-400" : "bg-white",
-        today ? "ring-2 ring-sky-500" : "",
-        canQuickCreate && !outside
-          ?  "cursor-pointer hover:border-emerald-500 hover:ring-2 hover:ring-emerald-400/70 hover:ring-offset-1"
-          : "cursor-default",
-     
-      ].join(" ")}
-      role={canQuickCreate ? "button" : undefined}
-      tabIndex={canQuickCreate ? 0 : -1}
-      aria-label={canQuickCreate ? `Crear evento el ${iso}` : undefined}
-    >
-      {/* Overlays puramente visuales */}
-      {isBlocked && (
-        <div className={`absolute inset-0 z-0 pointer-events-none rounded-xl ${blockedBg}`} />
-      )}
-      {!isBlocked && hasEvents && hasConfirmed && (
-        <div className={`absolute inset-0 z-0 pointer-events-none rounded-xl ${eventBgConfirmed}`} />
-      )}
-      {!isBlocked && hasEvents && !hasConfirmed && hasReserved && (
-        <div className={`absolute inset-0 z-0 pointer-events-none rounded-xl ${eventBgReserved}`} />
-      )}
-      {!isBlocked && !hasEvents && hasTastings && (
-        <div className={`absolute inset-0 z-0 pointer-events-none rounded-xl ${tastingBg}`} />
-      )}
-
-      {/* Cabecera: día + chips */}
-      <div className="relative z-10 mb-1 flex items-start justify-between">
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-semibold text-slate-700 bg-white/70 backdrop-blur">
-          {format(date, "d", { locale: es })}
-        </span>
-        <div className="flex flex-wrap items-center gap-1">
-          {tastingsCount > 0 && (
-            <span className="px-1.5 py-0.5 rounded-md bg-purple-100/80 text-purple-800 border border-purple-200 text-[10px] font-medium shadow-sm">
-              Pruebas de menú ({tastingsCount})
-            </span>
-          )}
-          {isBlocked && (
-            <span className="px-1.5 py-0.5 rounded-md bg-red-200 text-red-900 border border-red-300 text-[10px] font-semibold shadow-sm">
-              Bloqueado
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Lista de eventos */}
-      <div className="relative z-10 space-y-1">
-        {events.slice(0, 3).map((e) => (
-          <Link
-            key={e.id}
-            to={`/events/${e.id}`}
-            className={[
-              "block truncate rounded-md px-1.5 py-1 text-[11px] shadow-sm",
-              "hover:brightness-[0.98]  focus-visible:outline-2 focus-visible:outline-sky-400/50",
-              statusBg((e as any)?.status ?? undefined),
-            ].join(" ")}
-            title={`${e.title ?? "Evento"} — ${(e as any)?.status ?? ""}`}
-          >
-            {e.title ?? "(sin título)"}
-          </Link>
-        ))}
-        {events.length > 3 && (
-          <div className="text-[10px] text-slate-500">+{events.length - 3} más</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-export default function MonthGrid({ days, pivotDate }: Props) {
   const monthStart = startOfMonth(pivotDate);
   const monthEnd = endOfMonth(pivotDate);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-
-  const header = (
-    <div className="grid grid-cols-7 gap-1 text-[11px] text-slate-500">
-      {WEEKDAYS.map((d) => (
-        <div key={d} className="text-center font-medium">{d}</div>
-      ))}
-    </div>
-  );
-
-  const cells: React.ReactNode[] = [];
-  for (let c = gridStart; c <= gridEnd; c = addDays(c, 1)) {
-    const dto = days?.find((x) => x.date === format(c, "yyyy-MM-dd"));
-    cells.push(
-      <DayCell
-        key={c.toISOString()}
-        date={c}
-        dto={dto}
-        outside={!isSameMonth(c, monthStart)}
-        today={isToday(c)}
-      />
-    );
-  }
+  const gridEnd   = endOfWeek(monthEnd,   { weekStartsOn: 1 });
 
   return (
-    <div className="space-y-2">
-      {header}
-      <div className="grid grid-cols-7 gap-1">{cells}</div>
+    <div className="rounded-2xl border border-neutral-200 bg-white p-3">
+      {/* Weekday header */}
+      <div className="mb-2 grid grid-cols-7 gap-2 px-1">
+        {WEEKDAYS.map((w) => (
+          <div key={w} className="text-center text-[11px] text-neutral-500">{w}</div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-2">
+        {(() => {
+          const cells: React.ReactNode[] = [];
+          for (let c = gridStart; c <= gridEnd; c = addDays(c, 1)) {
+            const iso = format(c, "yyyy-MM-dd");
+            const dto = byDate.get(iso) ?? undefined;
+
+            cells.push(
+              <DayCell
+                key={c.toISOString()}
+                date={c}
+                dto={dto}
+                monthStart={monthStart}
+                today={isToday(c)}
+                size="normal"
+              />
+            );
+          }
+          return cells;
+        })()}
+      </div>
     </div>
   );
 }

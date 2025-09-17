@@ -1,2 +1,22 @@
+/* Tailwind v4: importa todo con un solo @import */
 @import "tailwindcss";
 
+/* Define tu paleta como tokens (mapean a clases: bg-*, text-*, ring-*, etc.) */
+@theme {
+--color-primary: #475569;       /* gris azulado fuerte */
+--color-primary-hover: #334155;
+--color-accent: #A5B4FC;        /* lavanda suave */
+--color-bg-main: #F9FAFB;       /* gris muy claro */
+--color-text-main: #111827;     /* gris casi negro */
+--color-alt-bg: #F3F4F6;        /* gris neutro */
+--color-beige: #E5E7EB;         /* separadores */
+--color-alert: #DC2626;         /* rojo estándar */
+--color-secondary: #6366F1;     /* lavanda intenso */
+--color-secondary-hover: #4F46E5;
+
+
+
+  /* radios útiles */
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1rem;
+}
