@@ -12,8 +12,7 @@ export interface EventDetailGateway {
 }
 
 function unwrap(any: any): DetailDTO {
-  const raw = any?.data ?? any;       // axios -> data ; fetch/json -> objeto
-  // SOLO tratamos raw.data como wrapper si parece el envoltorio del recurso
+  const raw = any?.data ?? any; // axios -> data ; fetch/json -> ya objeto
   const looksWrapper = raw?.data && (("id" in raw.data) || ("url" in raw.data) || ("data" in raw.data));
   const d = looksWrapper ? raw.data : raw;
 
