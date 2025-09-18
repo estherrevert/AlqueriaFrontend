@@ -2,11 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import EventHeader from "@/features/events/components/EventHeader";
 import Tabs, { TabKey } from "@/features/events/components/Tabs";
-import DetailPanel from "@/features/events/components/GeneralTab/DetailPanel";
 
-// Usa tus usecases/gateway existentes:
 import { makeEventsUseCases } from "@/application/events/usecases";
 import { EventsHttpGateway } from "@/infrastructure/http/events.gateway";
+import GeneralTab from "@/features/events/components/GeneralTab";
 
 const eventsUC = makeEventsUseCases(EventsHttpGateway);
 
@@ -16,27 +15,24 @@ type EventHeaderDTO = {
   status: "reserved" | "confirmed" | "cancelled";
   date?: string | null;
   clients?: { id: number; name: string }[];
-  counts?: Record<string, number>;
-  flags?: Record<string, boolean>;
 };
 
 export default function EventPage() {
-  const params = useParams<{ id: string }>();
-  const eventId = Number(params.id);
-
+  const { id } = useParams();
+  const eventId = Number(id);
   const [search, setSearch] = useSearchParams();
-  const activeTab = (search.get("tab") as TabKey) ?? "general";
 
-  const [loading, setLoading] = useState(true);
   const [event, setEvent] = useState<EventHeaderDTO | null>(null);
+  const [loading, setLoading] = useState(true);
+  const activeTab = (search.get("tab") as TabKey) || "general";
 
   const tabs = useMemo(
     () => [
-      { key: "general", label: "GENERAL" },
-      { key: "menu-inventory", label: "MENÚ E INVENTARIO", disabled: true }, // siguiente fase
-      { key: "tables", label: "MESAS", disabled: true }, // placeholder
-      { key: "files", label: "ARCHIVOS", disabled: true }, // siguiente fase
-    ] as { key: TabKey; label: string; disabled?: boolean }[],
+      { key: "general" as const, label: "GENERAL" },
+      { key: "menu-inventory" as const, label: "MENÚ/INVENTARIO", disabled: true },
+      { key: "tables" as const, label: "MESAS", disabled: true },
+      { key: "files" as const, label: "ARCHIVOS", disabled: true },
+    ],
     []
   );
 
@@ -46,44 +42,35 @@ export default function EventPage() {
       try {
         const resp = await eventsUC.get(eventId);
         if (!mounted) return;
-        // resp debería ser el EventResource { data: {...} } o el objeto directo, según tu gateway
-        // ajusta esto según tu EventsHttpGateway:
-        const data = (resp as any).data ?? resp;
+        const data: any = resp?.data ?? resp;
         setEvent({
           id: data.id,
           title: data.title,
           status: data.status,
-          date: data.date,
-          clients: data.clients ?? [],
-          counts: data.counts ?? {},
-          flags: data.flags ?? {},
+          date: data?.day?.date ?? data?.date ?? null,
+          clients: data?.clients ?? [],
         });
+      } catch {
+        setEvent(null);
       } finally {
         if (mounted) setLoading(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [eventId]);
 
   const onTabChange = (key: TabKey) => {
     setSearch((prev) => {
-      const n = new URLSearchParams(prev);
-      n.set("tab", key);
-      return n;
-    });
+      prev.set("tab", key);
+      return prev;
+    }, { replace: true });
   };
 
-  if (Number.isNaN(eventId)) {
-    return <div className="p-4 text-sm text-red-600">ID de evento inválido.</div>;
-  }
+  if (loading) return <div className="p-4 text-sm text-gray-500">Cargando evento…</div>;
 
   return (
-    <main className="p-4 md:p-6 lg:p-8">
-      {loading ? (
-        <div className="text-sm text-gray-500">Cargando evento…</div>
-      ) : event ? (
+    <main className="max-w-5xl mx-auto px-3 sm:px-4 lg:px-6 py-6">
+      {event ? (
         <>
           <EventHeader
             title={event.title}
@@ -94,26 +81,7 @@ export default function EventPage() {
 
           <Tabs tabs={tabs} active={activeTab} onChange={onTabChange} />
 
-          {/* Panels */}
-          {activeTab === "general" && (
-            <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Detalles del evento</h2>
-              <DetailPanel eventId={event.id} />
-              {/* En el siguiente paso añadimos ClientsDataPanel debajo */}
-            </section>
-          )}
-
-          {activeTab === "menu-inventory" && (
-            <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-              <p className="text-sm text-gray-500">Próximamente…</p>
-            </section>
-          )}
-
-          {activeTab === "tables" && (
-            <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-              <p className="text-sm text-gray-500">Próximamente…</p>
-            </section>
-          )}
+          {activeTab === "general" && <GeneralTab eventId={event.id} />}
 
           {activeTab === "files" && (
             <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">

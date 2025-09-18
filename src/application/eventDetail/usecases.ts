@@ -1,14 +1,10 @@
-import { EventDetailHttpGateway, DetailPayload, DetailDTO } from "@/infrastructure/http/event-detail.gateway";
+// src/application/eventDetail/usecases.ts
+import type { EventDetailGateway, DetailDTO } from "@/infrastructure/http/event-detail.gateway";
+import { EventDetailHttpGateway } from "@/infrastructure/http/event-detail.gateway";
 
-export function makeEventDetailUseCases() {
+export function makeEventDetailUseCases(gateway: EventDetailGateway = EventDetailHttpGateway) {
   return {
-    get: (eventId: number): Promise<DetailDTO> =>
-      EventDetailHttpGateway.get(eventId),
-
-    save: (eventId: number, data: DetailPayload): Promise<DetailDTO> =>
-      EventDetailHttpGateway.upsert(eventId, data),
-
-    uploadPdf: (eventId: number, file: File): Promise<DetailDTO> =>
-      EventDetailHttpGateway.upload(eventId, file),
+    get: (eventId: number): Promise<DetailDTO> => gateway.get(eventId),
+    save: (eventId: number, data: Record<string, unknown>): Promise<DetailDTO> => gateway.save(eventId, data),
   };
 }
