@@ -11,29 +11,14 @@ export interface EventDetailGateway {
   save(eventId: number, data: Record<string, unknown>): Promise<DetailDTO>;
 }
 
-/** Desenvuelve axios y SOLO desenvuelve el wrapper { data: {...} } cuando realmente es un wrapper.
- *  No confundimos con la propiedad 'data' del propio dominio (los campos del detalle).
- */
 function unwrap(any: any): DetailDTO {
-  const raw = any?.data ?? any; // axios -> data ; fetch/json -> ya es el objeto
-
-  const candidate = raw?.data;
-  const looksWrapper =
-    candidate &&
-    typeof candidate === "object" &&
-    // el wrapper debe contener claves propias del detalle (id/url) o al menos no ser un simple objeto campo->valor
-    (("id" in candidate) || ("url" in candidate) || ("data" in candidate && typeof candidate.data === "object"));
-
-  const d = looksWrapper ? candidate : raw;
+  const raw = any?.data ?? any;       // axios -> data ; fetch/json -> objeto
+  // SOLO tratamos raw.data como wrapper si parece el envoltorio del recurso
+  const looksWrapper = raw?.data && (("id" in raw.data) || ("url" in raw.data) || ("data" in raw.data));
+  const d = looksWrapper ? raw.data : raw;
 
   const id =
-    d?.id == null
-      ? null
-      : typeof d.id === "number"
-      ? d.id
-      : !Number.isNaN(Number(d.id))
-      ? Number(d.id)
-      : null;
+    d?.id == null ? null : typeof d.id === "number" ? d.id : !Number.isNaN(Number(d.id)) ? Number(d.id) : null;
 
   const url = typeof d?.url === "string" && d.url.trim() ? d.url : null;
   const data = (d?.data && typeof d.data === "object" ? d.data : {}) as Record<string, unknown>;
@@ -51,4 +36,3 @@ export const EventDetailHttpGateway: EventDetailGateway = {
     return unwrap(res);
   },
 };
-
