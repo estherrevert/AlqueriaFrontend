@@ -34,10 +34,19 @@ export default function TableRow({ value, onChange, onDelete, isDirty, duplicate
       <td className="px-2 py-1">
         <div className="flex flex-col">
           <input
-            className={`w-24 px-2 py-1 border rounded-md ${duplicateNumber ? "border-red-400 bg-red-50" : ""}`}
+            type="number"
+            inputMode="numeric"
+            pattern="\d*"
+            min={1}
+            step={1}
+            className="w-24 px-2 py-1 border rounded-md"
             placeholder="nº"
             value={value.table_number ?? ""}
-            onChange={(e) => onChange({ table_number: e.target.value })}
+            onChange={(e) => {
+              const raw = e.target.value ?? "";
+              const digits = raw.replace(/\D+/g, "");   // fuerza solo dígitos
+              onChange({ table_number: digits === "" ? "" : digits });
+            }}
           />
           {duplicateNumber && (
             <span className="text-[11px] text-red-600 mt-1">Número de mesa duplicado</span>

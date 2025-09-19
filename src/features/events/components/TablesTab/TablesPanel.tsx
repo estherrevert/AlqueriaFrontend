@@ -150,14 +150,9 @@ const { duplicates, duplicateNumbers } = useMemo(() => {
       );
       clearDirty(ids);
       setMessage("Todos los cambios guardados.");
-    } catch (e: any) {
-      // Si el back devolviera 422, intenta mostrar el primer error
-      const msg =
-        e?.response?.data?.errors?.table_number?.[0] ??
-        e?.response?.data?.message ??
-        "Error guardando algunos cambios.";
-      setMessage(msg);
-    } finally {
+    }  catch (e: any) {
+  setMessage(e?.message ?? "Error guardando algunos cambios.");
+}finally {
       setSavingAll(false);
       setTimeout(() => setMessage(null), 3500);
     }
@@ -223,16 +218,7 @@ const { duplicates, duplicateNumbers } = useMemo(() => {
             {savingAll ? "Guardando…" : "Guardar todo"}
           </button>
 
-          <button
-            onClick={onGeneratePdf}
-            className="px-3 py-1.5 rounded-md text-sm bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
-            disabled={generating || savingAll || duplicates.size > 0}
-            title={duplicates.size > 0 ? "Resuelve duplicados antes de generar" : "Generar PDF"}
-          >
-            {generating ? "Generando…" : "Generar PDF"}
-          </button>
-
-          <PdfActions url={data?.pdf_url ?? null} />
+        
         </div>
       </header>
 
@@ -277,6 +263,18 @@ const { duplicates, duplicateNumbers } = useMemo(() => {
             </tr>
           </tfoot>
         </table>
+      </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onGeneratePdf}
+            className="px-3 py-1.5 rounded-md text-sm bg-secondary text-white hover:bg-secondarydisabled:opacity-60"
+            disabled={generating || savingAll || duplicates.size > 0}
+            title={duplicates.size > 0 ? "Resuelve duplicados antes de generar" : "Generar PDF"}
+          >
+            {generating ? "Generando…" : "Generar PDF"}
+          </button>
+
+          <PdfActions url={data?.pdf_url ?? null} />
       </div>
 
       {message && (
