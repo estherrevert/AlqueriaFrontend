@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import EventHeader from "@/features/events/components/EventHeader";
 import Tabs, { TabKey } from "@/features/events/components/Tabs";
-
+import FilesTab from "@/features/events/components/FilesTab";
 import { makeEventsUseCases } from "@/application/events/usecases";
 import { EventsHttpGateway } from "@/infrastructure/http/events.gateway";
 import GeneralTab from "@/features/events/components/GeneralTab";
@@ -63,7 +63,7 @@ export default function EventPage() {
       { key: "general" as const, label: "GENERAL" },
       { key: "menu-inventory" as const, label: "MENÚ/INVENTARIO", disabled: true },
       { key: "tables" as const, label: "MESAS" },
-      { key: "files" as const, label: "ARCHIVOS", disabled: true },
+      { key: "files" as const, label: "ARCHIVOS" },
     ],
     []
   );
@@ -82,11 +82,8 @@ export default function EventPage() {
 
           {activeTab === "tables" && <TablesPanel eventId={event.id} />}
 
-          {activeTab === "files" && (
-            <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-              <p className="text-sm text-gray-500">Próximamente…</p>
-            </section>
-          )}
+          {activeTab === "files" && <FilesTab eventId={event.id} />}
+
         </>
       ) : (
         <div className="text-sm text-red-600">No se encontró el evento.</div>
