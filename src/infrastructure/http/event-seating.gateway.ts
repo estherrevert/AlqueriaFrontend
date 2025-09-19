@@ -16,7 +16,7 @@ function unwrapList(any: any): SeatingIndexDTO {
     tables: (d?.tables ?? []).map((t: any) => ({
       id: t.id,
       is_main_table: !!t.is_main_table,
-      table_number: t.table_number ?? null,
+      table_number: t.table_number == null ? null : String(t.table_number), // <-- aquí
       adults: Number(t.adults ?? 0),
       children: Number(t.children ?? 0),
       staff: Number(t.staff ?? 0),
@@ -40,7 +40,7 @@ function unwrapOne(any: any): SeatingTable {
   return {
     id: d.id,
     is_main_table: !!d.is_main_table,
-    table_number: d.table_number ?? null,
+    table_number: d.table_number == null ? null : String(d.table_number), // <-- y aquí
     adults: Number(d.adults ?? 0),
     children: Number(d.children ?? 0),
     staff: Number(d.staff ?? 0),
@@ -48,6 +48,7 @@ function unwrapOne(any: any): SeatingTable {
     notes: d.notes ?? null,
   };
 }
+
 
 export const EventSeatingHttpGateway: EventSeatingGateway = {
   async index(eventId: number) {

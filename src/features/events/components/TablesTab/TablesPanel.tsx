@@ -1,14 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { SeatingIndexDTO, SeatingTable } from "@/domain/seating/types";
 import { makeEventSeatingUseCases } from "@/application/eventSeating/usecases";
-import PdfActions from "@/features/events/components/GeneralTab/Detail/PdfActions";
+import PdfActions from "@/features/shared/PdfActions";
 import TableRow from "./TableRow";
 
 const uc = makeEventSeatingUseCases();
 
 type Props = { eventId: number };
 
-// Pequeña utilidad para limitar concurrencia (evita saturar el back)
 async function pMap<T, R>(
   items: T[],
   mapper: (item: T) => Promise<R>,
@@ -36,17 +35,11 @@ export default function TablesPanel({ eventId }: Props) {
   const [savingAll, setSavingAll] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  // Conjunto de filas modificadas (ids)
   const dirty = useRef<Set<number>>(new Set());
 
-  const markDirty = (id: number) => {
-    dirty.current.add(id);
-  };
+  const markDirty = (id: number) => { dirty.current.add(id); };
   const clearDirty = (ids?: number[]) => {
-    if (!ids) {
-      dirty.current.clear();
-      return;
-    }
+    if (!ids) { dirty.current.clear(); return; }
     ids.forEach((id) => dirty.current.delete(id));
   };
 
@@ -63,14 +56,42 @@ export default function TablesPanel({ eventId }: Props) {
         if (mounted) setLoading(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [eventId]);
 
+  // Detecta duplicados en tiempo real (ignora vacío / solo espacios)
+const { duplicates, duplicateNumbers } = useMemo(() => {
+  const counts = new Map<string, number>();
+
+  const toKey = (val: unknown) => {
+    if (val == null) return "";
+    return (typeof val === "string" ? val : String(val)).trim();
+  };
+
+  for (const r of rows) {
+    const key = toKey((r as any).table_number);
+    if (!key) continue; // ignorar vacíos
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  const dupIds = new Set<number>();
+  const nums: string[] = [];
+  counts.forEach((cnt, key) => { if (cnt > 1) nums.push(key); });
+
+  if (nums.length) {
+    const dupKeys = new Set(nums);
+    for (const r of rows) {
+      const key = toKey((r as any).table_number);
+      if (key && dupKeys.has(key)) dupIds.add(r.id);
+    }
+  }
+
+  return { duplicates: dupIds, duplicateNumbers: nums };
+}, [rows]);
+
+
   const totals = useMemo(() => {
-    const s = (k: keyof SeatingTable) =>
-      rows.reduce((acc, r) => acc + Number((r as any)[k] ?? 0), 0);
+    const s = (k: keyof SeatingTable) => rows.reduce((acc, r) => acc + Number((r as any)[k] ?? 0), 0);
     const adults = s("adults");
     const children = s("children");
     const staff = s("staff");
@@ -83,34 +104,30 @@ export default function TablesPanel({ eventId }: Props) {
 
   const onAdd = async () => {
     const created = await uc.addTable(eventId, {
-      is_main_table: false,
-      table_number: "",
-      adults: 0,
-      children: 0,
-      staff: 0,
-      no_menu: 0,
-      notes: "",
+      is_main_table: false, table_number: "", adults:0, children:0, staff:0, no_menu:0, notes:""
     });
     setRows((prev) => [...prev, created]);
     setData((prev) => (prev ? { ...prev, tables: [...prev.tables, created] } : prev));
-    // Nueva fila aún sin cambios -> no se marca dirty (ya está guardada recién creada)
   };
 
   const patchRow = (id: number, patch: Partial<SeatingTable>) => {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-    markDirty(id);
+    dirty.current.add(id);
   };
 
   const deleteRow = (id: number) => async () => {
     await uc.removeTable(id);
     setRows((prev) => prev.filter((r) => r.id !== id));
-    setData((prev) =>
-      prev ? { ...prev, tables: prev.tables.filter((r) => r.id !== id) } : prev
-    );
+    setData((prev) => (prev ? { ...prev, tables: prev.tables.filter((r) => r.id !== id) } : prev));
     clearDirty([id]);
   };
 
   const saveAll = async () => {
+    if (duplicates.size > 0) {
+      setMessage(`Hay números de mesa duplicados: ${duplicateNumbers.join(", ")}`);
+      setTimeout(() => setMessage(null), 3500);
+      return;
+    }
     const ids = Array.from(dirty.current);
     if (ids.length === 0) return;
 
@@ -131,22 +148,30 @@ export default function TablesPanel({ eventId }: Props) {
           }),
         4
       );
-
       clearDirty(ids);
       setMessage("Todos los cambios guardados.");
-    } catch {
-      setMessage("Error guardando algunos cambios.");
+    } catch (e: any) {
+      // Si el back devolviera 422, intenta mostrar el primer error
+      const msg =
+        e?.response?.data?.errors?.table_number?.[0] ??
+        e?.response?.data?.message ??
+        "Error guardando algunos cambios.";
+      setMessage(msg);
     } finally {
       setSavingAll(false);
-      setTimeout(() => setMessage(null), 2500);
+      setTimeout(() => setMessage(null), 3500);
     }
   };
 
   const onGeneratePdf = async () => {
-    // Si hay cambios sin guardar, guardamos primero
+    if (duplicates.size > 0) {
+      setMessage(`No se puede generar PDF con números duplicados: ${duplicateNumbers.join(", ")}`);
+      setTimeout(() => setMessage(null), 3500);
+      return;
+    }
     if (dirty.current.size > 0) {
       await saveAll();
-      if (dirty.current.size > 0) return; // si falló algo, no seguimos
+      if (dirty.current.size > 0) return; // si falló algo, paramos
     }
     setGenerating(true);
     try {
@@ -157,7 +182,7 @@ export default function TablesPanel({ eventId }: Props) {
       setMessage("Error al generar el PDF.");
     } finally {
       setGenerating(false);
-      setTimeout(() => setMessage(null), 2500);
+      setTimeout(() => setMessage(null), 3500);
     }
   };
 
@@ -179,12 +204,6 @@ export default function TablesPanel({ eventId }: Props) {
               Total asistentes: {totals.total}
             </span>
           </h3>
-
-          {dirtyCount > 0 && (
-            <span className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-200">
-              {dirtyCount} cambio{dirtyCount === 1 ? "" : "s"} sin guardar
-            </span>
-          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -198,8 +217,8 @@ export default function TablesPanel({ eventId }: Props) {
           <button
             onClick={saveAll}
             className="px-3 py-1.5 rounded-md text-sm bg-secondary text-white hover:bg-secondary-hover disabled:opacity-60"
-            disabled={savingAll || dirtyCount === 0}
-            title={dirtyCount === 0 ? "No hay cambios" : "Guardar todas las mesas"}
+            disabled={savingAll || dirtyCount === 0 || duplicates.size > 0}
+            title={duplicates.size > 0 ? "Resuelve duplicados antes de guardar" : (dirtyCount === 0 ? "No hay cambios" : "Guardar todas las mesas")}
           >
             {savingAll ? "Guardando…" : "Guardar todo"}
           </button>
@@ -207,8 +226,8 @@ export default function TablesPanel({ eventId }: Props) {
           <button
             onClick={onGeneratePdf}
             className="px-3 py-1.5 rounded-md text-sm bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
-            disabled={generating || savingAll}
-            title={dirtyCount > 0 ? "Guarda los cambios antes de generar" : "Generar PDF"}
+            disabled={generating || savingAll || duplicates.size > 0}
+            title={duplicates.size > 0 ? "Resuelve duplicados antes de generar" : "Generar PDF"}
           >
             {generating ? "Generando…" : "Generar PDF"}
           </button>
@@ -241,15 +260,14 @@ export default function TablesPanel({ eventId }: Props) {
                 onChange={(patch) => patchRow(r.id, patch)}
                 onDelete={deleteRow(r.id)}
                 isDirty={dirty.current.has(r.id)}
+                duplicateNumber={duplicates.has(r.id)}
               />
             ))}
           </tbody>
 
           <tfoot>
             <tr className="bg-gray-50 font-semibold">
-              <td className="px-2 py-2 text-right" colSpan={2}>
-                TOTAL
-              </td>
+              <td className="px-2 py-2 text-right" colSpan={2}>TOTAL</td>
               <td className="px-2 py-2 text-right">{totals.total}</td>
               <td className="px-2 py-2 text-right">{totals.adults}</td>
               <td className="px-2 py-2 text-right">{totals.staff}</td>
@@ -263,11 +281,7 @@ export default function TablesPanel({ eventId }: Props) {
 
       {message && (
         <div className="text-sm">
-          <span
-            className={
-              message.startsWith("Error") ? "text-red-600" : "text-green-700"
-            }
-          >
+          <span className={message.startsWith("Error") || message.startsWith("No se puede") ? "text-red-600" : "text-green-700"}>
             {message}
           </span>
         </div>

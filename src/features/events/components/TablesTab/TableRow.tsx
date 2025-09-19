@@ -6,9 +6,10 @@ type Props = {
   onChange: (patch: Partial<SeatingTable>) => void;
   onDelete: () => Promise<void>;
   isDirty?: boolean;
+  duplicateNumber?: boolean;
 };
 
-export default function TableRow({ value, onChange, onDelete, isDirty }: Props) {
+export default function TableRow({ value, onChange, onDelete, isDirty, duplicateNumber }: Props) {
   const clampNonNeg = (n: number) => (Number.isNaN(n) || n < 0 ? 0 : n);
 
   const total =
@@ -31,12 +32,17 @@ export default function TableRow({ value, onChange, onDelete, isDirty }: Props) 
       </td>
 
       <td className="px-2 py-1">
-        <input
-          className="w-24 px-2 py-1 border rounded-md"
-          placeholder="nº"
-          value={value.table_number ?? ""}
-          onChange={(e) => onChange({ table_number: e.target.value })}
-        />
+        <div className="flex flex-col">
+          <input
+            className={`w-24 px-2 py-1 border rounded-md ${duplicateNumber ? "border-red-400 bg-red-50" : ""}`}
+            placeholder="nº"
+            value={value.table_number ?? ""}
+            onChange={(e) => onChange({ table_number: e.target.value })}
+          />
+          {duplicateNumber && (
+            <span className="text-[11px] text-red-600 mt-1">Número de mesa duplicado</span>
+          )}
+        </div>
       </td>
 
       <td className="px-2 py-1 text-right font-medium">{total}</td>

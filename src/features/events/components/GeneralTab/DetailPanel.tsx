@@ -4,7 +4,7 @@ import { fetchDetailSchema } from "@/infrastructure/http/detail-schema.gateway";
 import type { FormSchema } from "@/infrastructure/http/detail-schema.gateway";
 import FormRenderer from "@/features/shared/dynform/FormRenderer";
 import ViewRenderer from "@/features/shared/dynform/ViewRenderer";
-import PdfActions from "./Detail/PdfActions";
+import PdfActions from "../../../shared/PdfActions";
 
 type Props = { eventId: number };
 type FormState = Record<string, any>;
