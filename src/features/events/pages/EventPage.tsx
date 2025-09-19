@@ -6,6 +6,7 @@ import Tabs, { TabKey } from "@/features/events/components/Tabs";
 import { makeEventsUseCases } from "@/application/events/usecases";
 import { EventsHttpGateway } from "@/infrastructure/http/events.gateway";
 import GeneralTab from "@/features/events/components/GeneralTab";
+import TablesPanel from "@/features/events/components/TablesTab/TablesPanel";
 
 const eventsUC = makeEventsUseCases(EventsHttpGateway);
 
@@ -22,33 +23,21 @@ export default function EventPage() {
   const eventId = Number(id);
   const [search, setSearch] = useSearchParams();
 
-  const [event, setEvent] = useState<EventHeaderDTO | null>(null);
   const [loading, setLoading] = useState(true);
-  const activeTab = (search.get("tab") as TabKey) || "general";
-
-  const tabs = useMemo(
-    () => [
-      { key: "general" as const, label: "GENERAL" },
-      { key: "menu-inventory" as const, label: "MENÚ/INVENTARIO", disabled: true },
-      { key: "tables" as const, label: "MESAS", disabled: true },
-      { key: "files" as const, label: "ARCHIVOS", disabled: true },
-    ],
-    []
-  );
+  const [event, setEvent] = useState<EventHeaderDTO | null>(null);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const resp = await eventsUC.get(eventId);
+        const data = await eventsUC.get(eventId);
         if (!mounted) return;
-        const data: any = resp?.data ?? resp;
         setEvent({
           id: data.id,
           title: data.title,
           status: data.status,
-          date: data?.day?.date ?? data?.date ?? null,
-          clients: data?.clients ?? [],
+          date: (data as any)?.day?.date ?? (data as any)?.date ?? null,
+          clients: (data as any)?.clients ?? [],
         });
       } catch {
         setEvent(null);
@@ -61,27 +50,37 @@ export default function EventPage() {
 
   const onTabChange = (key: TabKey) => {
     setSearch((prev) => {
-      prev.set("tab", key);
-      return prev;
+      const n = new URLSearchParams(prev);
+      n.set("tab", key);
+      return n;
     }, { replace: true });
   };
 
-  if (loading) return <div className="p-4 text-sm text-gray-500">Cargando evento…</div>;
+  const activeTab = (search.get("tab") as TabKey) || "general";
+
+  const tabs = useMemo(
+    () => [
+      { key: "general" as const, label: "GENERAL" },
+      { key: "menu-inventory" as const, label: "MENÚ/INVENTARIO", disabled: true },
+      { key: "tables" as const, label: "MESAS" },
+      { key: "files" as const, label: "ARCHIVOS", disabled: true },
+    ],
+    []
+  );
 
   return (
-    <main className="max-w-5xl mx-auto px-3 sm:px-4 lg:px-6 py-6">
-      {event ? (
+    <main className="container max-w-6xl mx-auto px-3 py-4">
+      {loading ? (
+        <p>Cargando evento…</p>
+      ) : event ? (
         <>
-          <EventHeader
-            title={event.title}
-            status={event.status}
-            date={event.date}
-            clients={event.clients}
-          />
+          <EventHeader id={event.id} title={event.title} status={event.status} date={event.date} />
 
           <Tabs tabs={tabs} active={activeTab} onChange={onTabChange} />
 
           {activeTab === "general" && <GeneralTab eventId={event.id} />}
+
+          {activeTab === "tables" && <TablesPanel eventId={event.id} />}
 
           {activeTab === "files" && (
             <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">

@@ -71,14 +71,20 @@ export default function DetailPanel({ eventId }: Props) {
       <header className="flex items-center justify-between">
         <h3 className="font-semibold text-lg">Detalles del evento</h3>
         {mode === "view" ? (
-          <button className="px-3 py-1.5 rounded-md text-sm bg-secondary text-white hover:bg-secondary-hover"
-                  onClick={() => setMode("edit")} type="button">Editar</button>
+          <div className="flex items-center gap-2">
+            <button className="px-3 py-1.5 rounded-md text-sm bg-secondary text-white hover:bg-secondary-hover"
+              onClick={() => setMode("edit")} type="button">Editar</button>
+                      <PdfActions url={detailUrl} />
+
+          </div>
+
+
         ) : (
           <div className="flex items-center gap-2">
             <button className="px-3 py-1.5 rounded-md text-sm bg-gray-100 hover:bg-gray-200"
-                    onClick={onCancel} type="button" disabled={saving}>Cancelar</button>
-            <button className="px-3 py-1.5 rounded-md text-sm bg-green-600 text-white hover:bg-green-700 disabled:opacity-60"
-                    onClick={onSave} type="button" disabled={saving}>
+              onClick={onCancel} type="button" disabled={saving}>Cancelar</button>
+            <button className="px-3 py-1.5 rounded-md text-sm bg-secondary text-white hover:bg-accent disabled:opacity-60"
+              onClick={onSave} type="button" disabled={saving}>
               {saving ? "Guardando..." : "Guardar y generar PDF"}
             </button>
           </div>
@@ -86,12 +92,29 @@ export default function DetailPanel({ eventId }: Props) {
       </header>
 
       {mode === "view"
-        ? <ViewRenderer schema={schema} values={form}/>
-        : <FormRenderer schema={schema} values={form} onChange={onFieldChange}/>}
+        ? <ViewRenderer schema={schema} values={form} />
+        : <FormRenderer schema={schema} values={form} onChange={onFieldChange} />}
 
       <footer className="flex items-center justify-between pt-2">
-        <div className="text-sm text-gray-500">{detailUrl ? "PDF disponible." : "Aún no hay un PDF creado."}</div>
-        <PdfActions url={detailUrl}/>
+        {mode === "view" ? (
+          <div className="flex items-center gap-2">
+            <button className="px-3 py-1.5 rounded-md text-sm bg-secondary text-white hover:bg-secondary-hover"
+              onClick={() => setMode("edit")} type="button">Editar</button>
+                      <PdfActions url={detailUrl} />
+
+          </div>
+
+
+        ) : (
+          <div className="flex items-center gap-2">
+            <button className="px-3 py-1.5 rounded-md text-sm bg-gray-100 hover:bg-gray-200"
+              onClick={onCancel} type="button" disabled={saving}>Cancelar</button>
+            <button className="px-3 py-1.5 rounded-md text-sm bg-secondary text-white hover:bg-accent disabled:opacity-60"
+              onClick={onSave} type="button" disabled={saving}>
+              {saving ? "Guardando..." : "Guardar y generar PDF"}
+            </button>
+          </div>
+        )}
       </footer>
 
       {message && (
