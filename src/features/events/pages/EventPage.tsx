@@ -7,7 +7,8 @@ import { makeEventsUseCases } from "@/application/events/usecases";
 import { EventsHttpGateway } from "@/infrastructure/http/events.gateway";
 import GeneralTab from "@/features/events/components/GeneralTab";
 import TablesPanel from "@/features/events/components/TablesTab/TablesPanel";
-
+import InventoryTab from "../components/InventoryTab";
+import MenuTab from "../components/MenuTab/MenuTab";
 const eventsUC = makeEventsUseCases(EventsHttpGateway);
 
 type EventHeaderDTO = {
@@ -61,7 +62,8 @@ export default function EventPage() {
   const tabs = useMemo(
     () => [
       { key: "general" as const, label: "GENERAL" },
-      { key: "menu-inventory" as const, label: "MENÚ/INVENTARIO", disabled: true },
+      { key: "menu" as const, label: "MENÚ" },
+      { key: "inventory" as const, label: "INVENTARIO" },
       { key: "tables" as const, label: "MESAS" },
       { key: "files" as const, label: "ARCHIVOS" },
     ],
@@ -74,8 +76,13 @@ export default function EventPage() {
         <p>Cargando evento…</p>
       ) : event ? (
         <>
-          <EventHeader id={event.id} title={event.title} status={event.status} date={event.date} />
-
+          <EventHeader
+            id={event.id}
+            title={event.title}
+            status={event.status}
+            date={event.date}
+            onStatusChanged={(next) => setEvent((prev) => (prev ? { ...prev, status: next } : prev))}
+          />
           <Tabs tabs={tabs} active={activeTab} onChange={onTabChange} />
 
           {activeTab === "general" && <GeneralTab eventId={event.id} />}
@@ -83,7 +90,10 @@ export default function EventPage() {
           {activeTab === "tables" && <TablesPanel eventId={event.id} />}
 
           {activeTab === "files" && <FilesTab eventId={event.id} />}
-
+          {activeTab === "inventory" && <InventoryTab eventId={event.id} />}
+          {activeTab === "menu" && (
+            <MenuTab eventId={event.id} attendeesCount={event?.counts?.attendees ?? 0} />
+          )}
         </>
       ) : (
         <div className="text-sm text-red-600">No se encontró el evento.</div>
