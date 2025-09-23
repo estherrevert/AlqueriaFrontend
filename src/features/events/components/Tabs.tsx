@@ -1,6 +1,6 @@
 import React from "react";
 
-export type TabKey = "general" | "menu" | "inventory" | "tables" | "files";
+export type TabKey = "general" | "menu" |"tastings"| "inventory" | "tables" | "files";
 
 type Tab = { key: TabKey; label: string; disabled?: boolean };
 type Props = {

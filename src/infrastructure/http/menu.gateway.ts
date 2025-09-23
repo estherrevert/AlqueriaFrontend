@@ -82,4 +82,17 @@ export class MenuHttpGateway implements MenuGatewayPort {
     const url = `${API_BASE}/api/v1/events/${eventId}/menu`;
     return await http<EventMenu>(url, { method: "PUT", body: JSON.stringify(payload) });
   }
+
+  async getTastingMenu(tastingId: number) {
+    const url = `${API_BASE}/api/v1/tastings/${tastingId}/menu`;
+    return await http<EventMenu>(url);
+  }
+
+  async upsertTastingMenu(
+    tastingId: number,
+    payload: { dish_ids?: number[]; drinks: MenuDrinkSelection[] }
+  ) {
+    const url = `${API_BASE}/api/v1/tastings/${tastingId}/menu`;
+    return await http<EventMenu>(url, { method: "PUT", body: JSON.stringify(payload) });
+  }
 }

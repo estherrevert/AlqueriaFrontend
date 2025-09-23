@@ -9,6 +9,8 @@ import GeneralTab from "@/features/events/components/GeneralTab";
 import TablesPanel from "@/features/events/components/TablesTab/TablesPanel";
 import InventoryTab from "../components/InventoryTab";
 import MenuTab from "../components/MenuTab/MenuTab";
+import TastingsMenuTab from "@/features/events/components/TastingsTab/TastingsMenuTab";
+
 const eventsUC = makeEventsUseCases(EventsHttpGateway);
 
 type EventHeaderDTO = {
@@ -63,6 +65,7 @@ export default function EventPage() {
     () => [
       { key: "general" as const, label: "GENERAL" },
       { key: "menu" as const, label: "MENÚ" },
+      { key: "tastings" as const, label: "PRUEBAS MENÚ" }, 
       { key: "inventory" as const, label: "INVENTARIO" },
       { key: "tables" as const, label: "MESAS" },
       { key: "files" as const, label: "ARCHIVOS" },
@@ -94,6 +97,9 @@ export default function EventPage() {
           {activeTab === "menu" && (
             <MenuTab eventId={event.id} attendeesCount={event?.counts?.attendees ?? 0} />
           )}
+          {activeTab === "tastings" && <TastingsMenuTab eventId={event.id} />}
+
+          
         </>
       ) : (
         <div className="text-sm text-red-600">No se encontró el evento.</div>
