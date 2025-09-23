@@ -4,96 +4,101 @@ import OptionCard from "./OptionCard";
 type Base = {
   id: number;
   name: string;
-  type?: string | null;
+  type?: string | null;           // subcategoría (FoodType/DrinkType)
   description?: string | null;
   picture_url?: string | null;
-  pricing?: { type?: string | null };
+  pricing?: { per_person?: number | null; per_unit?: number | null; global?: number | null };
 };
 
 type Props<T extends Base> = {
+  title: string;
   items?: T[];
   isSelected: (id: number) => boolean;
   onToggle: (id: number) => void;
-
-  // cantidad opcional
-  quantities?: Record<number, number>;
-  onIncQuantity?: (id: number) => void;
-  onDecQuantity?: (id: number) => void;
-  quantityVisibleWhen?: (item: T) => boolean; // ej: drinks per_unit
+  groupOrder?: string[];          // orden de subcategorías
+  searchPlaceholder?: string;
 };
 
 export default function OptionGrid<T extends Base>({
-  items,
-  isSelected,
-  onToggle,
-  quantities = {},
-  onIncQuantity,
-  onDecQuantity,
-  quantityVisibleWhen,
+  title, items, isSelected, onToggle, groupOrder, searchPlaceholder = "Buscar…",
 }: Props<T>) {
-  const list = (items ?? []).slice();
-  const [query, setQuery] = useState("");
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(i =>
-      i.name.toLowerCase().includes(q)
-      || (i.type ?? "").toLowerCase().includes(q)
-      || (i.description ?? "").toLowerCase().includes(q)
-    );
-  }, [list, query]);
+  const [q, setQ] = useState("");
 
   const groups = useMemo(() => {
-    const map = new Map<string, T[]>();
-    filtered.forEach(i => {
-      const key = (i.type ?? "Sin categoría");
-      if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(i);
+    const list = (items ?? []).filter(it => {
+      const hay = `${it.name} ${it.type ?? ""}`.toLowerCase();
+      return hay.includes(q.toLowerCase());
     });
-    return [...map.entries()].map(([title, items]) => ({ title, items }));
-  }, [filtered]);
+
+    // Agrupar por subcategoría
+    const map = new Map<string, T[]>();
+    for (const it of list) {
+      const key = (it.type ?? "Otros").trim();
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(it);
+    }
+
+    // Orden interno por nombre
+    for (const arr of map.values()) {
+      arr.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
+    }
+
+    // Orden de grupos: groupOrder primero (normalizado), resto alfabético
+    const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+    const desired = (groupOrder ?? []).map(norm);
+
+    const entries = Array.from(map.entries());
+    entries.sort((a, b) => {
+      const A = norm(a[0]); const B = norm(b[0]);
+      const ia = desired.indexOf(A); const ib = desired.indexOf(B);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a[0].localeCompare(b[0], "es", { sensitivity: "base" });
+    });
+
+    return entries;
+  }, [items, q, groupOrder]);
+
+  const priceForCard = (it: T) => {
+    const p = it.pricing ?? {};
+    return (typeof p.per_person === "number" && p.per_person) ||
+           (typeof p.per_unit   === "number" && p.per_unit)   ||
+           (typeof p.global     === "number" && p.global)     ||
+           null;
+  };
 
   return (
-    <div>
-      <div className="mb-2">
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-base font-bold text-[color:var(--color-text-main)] tracking-wide">{title}</h3>
         <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar…"
-          className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="text-sm rounded-md border px-2 py-1"
+          placeholder={searchPlaceholder}
         />
       </div>
 
-      {groups.map(group => (
-        <div key={group.title} className="mb-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-secondary)] mb-1">{group.title}</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-            {group.items.map((i) => {
-              const showQty = quantityVisibleWhen ? quantityVisibleWhen(i) : false;
-              const qty = quantities[i.id] ?? 1;
-              return (
-                <div key={i.id} className="relative">
-                  <OptionCard
-                    id={i.id}
-                    name={(i as any).name}
-                    type={(i as any).type ?? undefined}
-                    description={(i as any).description ?? undefined}
-                    picture_url={(i as any).picture_url ?? undefined}
-                    price={undefined} // lo mostramos en el resumen, no aquí (opcional)
-                    selected={isSelected(i.id)}
-                    onToggle={() => onToggle(i.id)}
-                  />
-                  {showQty && isSelected(i.id) && (
-                    <div className="absolute right-2 top-2 flex items-center gap-1 bg-white/80 backdrop-blur rounded-md border px-1 py-0.5">
-                      <button className="px-2 text-sm" onClick={(e) => { e.stopPropagation(); onDecQuantity?.(i.id); }}>−</button>
-                      <div className="min-w-[1.5rem] text-center text-sm">{qty}</div>
-                      <button className="px-2 text-sm" onClick={(e) => { e.stopPropagation(); onIncQuantity?.(i.id); }}>+</button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+      {groups.map(([label, arr]) => (
+        <div key={label} className="mb-4">
+          <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-secondary)] mb-2">
+            {label}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {arr.map((it) => (
+              <OptionCard
+                key={it.id}
+                id={it.id}
+                name={it.name}
+                type={it.type ?? undefined}
+                description={it.description ?? undefined}
+                picture_url={it.picture_url ?? undefined}
+                price={priceForCard(it) ?? undefined}
+                selected={isSelected(it.id)}
+                onToggle={() => onToggle(it.id)}
+              />
+            ))}
           </div>
         </div>
       ))}
