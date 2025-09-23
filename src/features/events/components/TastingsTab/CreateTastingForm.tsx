@@ -34,7 +34,7 @@ export default function CreateTastingForm({ eventId, onCreated }: Props) {
       });
       onCreated();
     } catch (e: any) {
-      setError(e?.message ?? "No se pudo crear la cata");
+      setError(e?.message ?? "No se pudo crear la prueba de menú");
     } finally {
       setSaving(false);
     }
@@ -46,7 +46,7 @@ export default function CreateTastingForm({ eventId, onCreated }: Props) {
       className="rounded-xl border border-[color:var(--color-beige)] bg-[color:var(--color-bg-main)] p-4 shadow-sm"
     >
       <h3 className="mb-3 text-base font-bold text-[color:var(--color-text-main)]">
-        Nueva cata
+        Nueva prueba
       </h3>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -85,12 +85,13 @@ export default function CreateTastingForm({ eventId, onCreated }: Props) {
 
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-600">
-              Título (opcional)
+              Título 
             </label>
             <input
               type="text"
+              required={true}
               value={title}
-              placeholder="Primera cata"
+              placeholder="Primera prueba"
               onChange={(e) => setTitle(e.target.value)}
               className="w-full rounded-lg border border-[color:var(--color-beige)] px-2 py-1 outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-[color:var(--color-secondary)]"
             />
@@ -106,7 +107,7 @@ export default function CreateTastingForm({ eventId, onCreated }: Props) {
           disabled={disabled || saving}
           className="rounded-xl bg-[color:var(--color-secondary)] px-4 py-2 text-sm text-white shadow-sm transition-colors hover:bg-[color:var(--color-secondary-hover)] disabled:opacity-60"
         >
-          {saving ? "Creando…" : "Crear cata"}
+          {saving ? "Creando…" : "Crear prueba"}
         </button>
       </div>
     </form>

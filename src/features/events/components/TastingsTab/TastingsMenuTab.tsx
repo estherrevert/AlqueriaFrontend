@@ -58,13 +58,13 @@ export default function TastingsMenuTab({ eventId }: Props) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-bold text-[color:var(--color-text-main)]">Catas del evento</h3>
+        <h3 className="text-base font-bold text-[color:var(--color-text-main)]">Pruebas de menú</h3>
         <button
           type="button"
           className="rounded-xl bg-[color:var(--color-secondary)] px-3 py-2 text-sm text-white shadow-sm transition-colors hover:bg-[color:var(--color-secondary-hover)]"
           onClick={() => setCreating((v) => !v)}
         >
-          {creating ? "Cerrar" : "Nueva cata"}
+          {creating ? "Cerrar" : "Nueva prueba"}
         </button>
       </div>
 
@@ -92,7 +92,7 @@ export default function TastingsMenuTab({ eventId }: Props) {
               >
                 <div className="min-w-0">
                   <div className="font-medium text-[color:var(--color-text-main)]">
-                    {t.title ?? `Cata #${t.id}`}
+                    {t.title ?? `Prueba menú #${t.id}`}
                   </div>
                   <div className="text-xs text-gray-600">
                     {formatEsDate(t.date)}
