@@ -14,7 +14,15 @@ export function makeTastingsUseCases(
     return data;
   }
 
-  async function create(input: { event_id: number; day_id: number; hour: string; attendees: number; title?: string | null; notes?: string | null; }): Promise<TastingSummary> {
+  // NUEVO: listar pruebas por día (usa el atajo "date")
+  async function listByDay(date: string): Promise<TastingSummary[]> {
+    const { data } = await tastings.list({ date, per_page: 100 });
+    return data;
+  }
+
+  async function create(input: {
+    event_id: number; day_id: number; hour?: string | null; attendees?: number | null; title?: string | null; notes?: string | null
+  }): Promise<TastingSummary> {
     return tastings.create(input);
   }
 
@@ -34,5 +42,5 @@ export function makeTastingsUseCases(
     return menuGw.upsertTastingMenu(tastingId, payload);
   }
 
-  return { listByEvent, create, setDay, getTastingMenu, saveTastingMenu };
+  return { listByEvent, listByDay, create, setDay, getTastingMenu, saveTastingMenu };
 }

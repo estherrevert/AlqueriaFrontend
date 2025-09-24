@@ -6,6 +6,7 @@ import CalendarPage from "@/features/calendar/pages/CalendarPage";
 import EventPage from "@/features/events/pages/EventPage";
 import NewEventPage from "@/features/events/pages/NewEventPage"; // <-- NUEVO
 import AppShell from "./components/layout/AppShell";
+import BlockDaysPage from "./features/calendar/pages/BlockDaysPage";
 
 function AuthGate() {
 const { data: me, isLoading } = useQuery({ queryKey: qk.me, queryFn: getUser, retry: false });
@@ -21,8 +22,10 @@ export default function App() {
       <Route element={<AuthGate />}>
         <Route element={<AppShell />}>
           <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/events/new" element={<NewEventPage />} /> {/* <-- ESTA */}
+          <Route path="/events/new" element={<NewEventPage />} />
           <Route path="/events/:id" element={<EventPage />} />
+            <Route path="/calendar/block-days" element={<BlockDaysPage />} />
+
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/calendar" replace />} />

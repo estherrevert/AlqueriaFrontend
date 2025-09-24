@@ -197,7 +197,7 @@ export default function CalendarFieldTasting({ value, onPicked }: Props) {
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="inline-block h-3 w-3 rounded" style={{ backgroundColor: "#A5B4FC" }} />
-          Catas (no bloquea)
+          Pruebas menú
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="inline-block h-3 w-3 rounded" style={{ backgroundColor: "#D1FAE5" }} />

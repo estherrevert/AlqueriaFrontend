@@ -1,4 +1,3 @@
-// src/ui/calendar/DayCell.tsx
 import React from "react";
 import { format, isSameMonth } from "date-fns";
 import { es } from "date-fns/locale";

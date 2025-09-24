@@ -1,8 +1,17 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useState } from "react";
 
-const navItems = [
-  { to: "/calendar", label: "Calendario", icon: CalendarIcon },
+/** Tipado del menú lateral (end es opcional) */
+type NavItem = {
+  to: string;
+  label: string;
+  icon: (props: React.SVGProps<SVGSVGElement>) => JSX.Element;
+  end?: boolean;
+};
+
+const navItems: NavItem[] = [
+  { to: "/calendar", label: "Calendario", icon: CalendarIcon, end: true }, // 👈 EXACT MATCH
+  { to: "/calendar/block-days", label: "Bloquear días", icon: LockIcon },
   { to: "/events/new", label: "Nuevo evento", icon: PlusIcon },
 ];
 
@@ -71,14 +80,12 @@ export default function AppShell() {
       <div className="pt-20 lg:ml-64">
         <main className="px-3 sm:px-4 lg:px-6">
           {/* min-h: alto de viewport - header(4rem) - footer(2.25rem) */}
-           <div className="min-h-[calc(100dvh-4rem-2rem)] pb-2">
+          <div className="min-h-[calc(100dvh-4rem-2rem)] pb-2">
             <Card>
               <Outlet />
             </Card>
           </div>
         </main>
-
- 
       </div>
 
       {/* DRAWER móvil */}
@@ -111,6 +118,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           <li key={item.to}>
             <NavLink
               to={item.to}
+              end={item.end} 
               onClick={onNavigate}
               className={({ isActive }) =>
                 [
@@ -159,6 +167,14 @@ function BurgerIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" {...props}>
       <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+function LockIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <rect x="4" y="10" width="16" height="10" rx="2" stroke="currentColor" />
+      <path d="M8 10V7a4 4 0 118 0v3" stroke="currentColor" />
     </svg>
   );
 }

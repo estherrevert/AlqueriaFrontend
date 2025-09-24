@@ -1,4 +1,3 @@
-// src/ui/calendar/DayCell.tsx
 import React from "react";
 import { format, isSameMonth } from "date-fns";
 import { es } from "date-fns/locale";
@@ -77,11 +76,14 @@ export default function DayCell({
         </span>
         <div className="flex flex-wrap items-center gap-1">
           {f.tastingsCount > 0 && (
-            <span
-              className={`px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-800 border border-purple-200 ${badgeText} font-medium shadow-sm`}
+            <Link
+              to={`/calendar/tastings/${iso}`}
+              className={`px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-800 border border-purple-200 ${badgeText} font-medium shadow-sm hover:bg-purple-50`}
+              title="Ver todas las pruebas de menú de este día"
+              onClick={(e) => e.stopPropagation()}
             >
               Pruebas de menú ({f.tastingsCount})
-            </span>
+            </Link>
           )}
           {f.isBlocked && (
             <span

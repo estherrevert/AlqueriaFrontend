@@ -17,5 +17,13 @@ return parsed;
 throw toHttpError(e);
 }
 }
+async bulkBlockDays(params: { dates: string[]; blocked: boolean }): Promise<{
+  summary: { blocked: number; unblocked: number; skipped: number };
+  results: { date: string; status: string; reason?: string }[];
+}> {
+  const { data } = await api.post("/api/v1/days/block-bulk", params);
+  return data;
+}
+  
 }
 
