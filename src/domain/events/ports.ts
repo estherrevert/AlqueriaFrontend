@@ -16,6 +16,15 @@ export interface EventsGateway {
     user_ids: number[];
   }): Promise<EventDetail>;
 
-  // 👇 NUEVO: cambiar estado del evento
   changeStatus(id: number, status: EventStatus): Promise<EventDetail>;
+
+  update(
+    id: number,
+    payload: Partial<{ title: string | null; status: EventStatus; day_id: number }>
+  ): Promise<EventDetail>;
+
+  updateDate(id: number, dateISO: string): Promise<EventDetail>;
+
+  attachUsers(id: number, userIds: number[]): Promise<void>;
+  detachUser(id: number, userId: number): Promise<void>;
 }

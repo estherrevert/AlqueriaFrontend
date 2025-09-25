@@ -15,22 +15,37 @@ type Props<T extends Base> = {
   items?: T[];
   isSelected: (id: number) => boolean;
   onToggle: (id: number) => void;
-  groupOrder?: string[];          // orden de subcategorías
+
+  /** Orden opcional de grupos (claves visibles tal y como llegan en `type`) */
+  groupOrder?: string[];
+
+  /** Placeholder del buscador */
   searchPlaceholder?: string;
+
+  /** NUEVO: bulk actions por grupo (si no se pasan, no se muestran los botones) */
+  onSelectMany?: (ids: number[]) => void;
+  onUnselectMany?: (ids: number[]) => void;
 };
 
 export default function OptionGrid<T extends Base>({
-  title, items, isSelected, onToggle, groupOrder, searchPlaceholder = "Buscar…",
+  title,
+  items,
+  isSelected,
+  onToggle,
+  groupOrder,
+  searchPlaceholder = "Buscar…",
+  onSelectMany,
+  onUnselectMany,
 }: Props<T>) {
   const [q, setQ] = useState("");
 
   const groups = useMemo(() => {
-    const list = (items ?? []).filter(it => {
+    const list = (items ?? []).filter((it) => {
       const hay = `${it.name} ${it.type ?? ""}`.toLowerCase();
       return hay.includes(q.toLowerCase());
     });
 
-    // Agrupar por subcategoría
+    // Agrupar por subcategoría (type) con fallback "Otros"
     const map = new Map<string, T[]>();
     for (const it of list) {
       const key = (it.type ?? "Otros").trim();
@@ -38,40 +53,29 @@ export default function OptionGrid<T extends Base>({
       map.get(key)!.push(it);
     }
 
-    // Orden interno por nombre
-    for (const arr of map.values()) {
-      arr.sort((a, b) => a.name.localeCompare(b.name, "es", { sensitivity: "base" }));
+    let entries = Array.from(map.entries()); // [label, items[]]
+
+    // Ordenar por groupOrder si viene
+    if (groupOrder?.length) {
+      const orderIndex = new Map(groupOrder.map((k, i) => [k, i]));
+      entries.sort((a, b) => {
+        const ia = orderIndex.has(a[0]) ? (orderIndex.get(a[0]) as number) : Number.MAX_SAFE_INTEGER;
+        const ib = orderIndex.has(b[0]) ? (orderIndex.get(b[0]) as number) : Number.MAX_SAFE_INTEGER;
+        if (ia !== ib) return ia - ib;
+        return a[0].localeCompare(b[0]);
+      });
+    } else {
+      // Orden alfabético por defecto
+      entries.sort((a, b) => a[0].localeCompare(b[0]));
     }
 
-    // Orden de grupos: groupOrder primero (normalizado), resto alfabético
-    const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
-    const desired = (groupOrder ?? []).map(norm);
-
-    const entries = Array.from(map.entries());
-    entries.sort((a, b) => {
-      const A = norm(a[0]); const B = norm(b[0]);
-      const ia = desired.indexOf(A); const ib = desired.indexOf(B);
-      if (ia !== -1 && ib !== -1) return ia - ib;
-      if (ia !== -1) return -1;
-      if (ib !== -1) return 1;
-      return a[0].localeCompare(b[0], "es", { sensitivity: "base" });
-    });
-
-    return entries;
+    return entries; // [ [label, items[]], ... ]
   }, [items, q, groupOrder]);
 
-  const priceForCard = (it: T) => {
-    const p = it.pricing ?? {};
-    return (typeof p.per_person === "number" && p.per_person) ||
-           (typeof p.per_unit   === "number" && p.per_unit)   ||
-           (typeof p.global     === "number" && p.global)     ||
-           null;
-  };
-
   return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-base font-bold text-[color:var(--color-text-main)] tracking-wide">{title}</h3>
+    <div className="rounded-xl border border-[color:var(--color-beige)] bg-white p-3 shadow-sm">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">{title}</h3>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -80,28 +84,83 @@ export default function OptionGrid<T extends Base>({
         />
       </div>
 
-      {groups.map(([label, arr]) => (
-        <div key={label} className="mb-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-secondary)] mb-2">
-            {label}
+      {groups.map(([label, arr]) => {
+        const ids = arr.map((it) => it.id);
+        const allSelected = ids.every((id) => isSelected(id));
+
+        return (
+          <div key={label} className="mb-4">
+            {/* Encabezado del grupo: título + acciones pegadas */}
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-secondary)]">
+                {label}
+              </div>
+
+              {(onSelectMany || onUnselectMany) && (
+                <>
+                  <span className="text-[10px] text-gray-400">·</span>
+                  {!allSelected ? (
+                    <button
+                      type="button"
+                      className="inline-flex items-center rounded-2xl border px-2.5 py-1 text-[11px] font-medium
+             text-[color:var(--color-secondary)]
+             border-[color:var(--color-secondary)]
+             hover:bg-[color:var(--color-accent)]/25"
+
+
+                      onClick={() => {
+                        if (onSelectMany) onSelectMany(ids);
+                        else ids.forEach((id) => {
+                          if (!isSelected(id)) onToggle(id);
+                        });
+                      }}
+                    >
+                      Seleccionar todos
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="text-[11px] font-medium text-[color:var(--color-secondary)] hover:underline"
+                      onClick={() => {
+                        if (onUnselectMany) onUnselectMany(ids);
+                        else ids.forEach((id) => {
+                          if (isSelected(id)) onToggle(id);
+                        });
+                      }}
+                    >
+                      Quitar todo
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {arr.map((it) => (
+                <OptionCard
+                  key={it.id}
+                  id={it.id}
+                  name={it.name}
+                  type={it.type}
+                  description={it.description}
+                  picture_url={it.picture_url ?? undefined}
+                  price={
+                    typeof it.pricing?.per_person === "number"
+                      ? it.pricing?.per_person
+                      : typeof it.pricing?.per_unit === "number"
+                      ? it.pricing?.per_unit
+                      : typeof it.pricing?.global === "number"
+                      ? it.pricing?.global
+                      : null
+                  }
+                  selected={isSelected(it.id)}
+                  onToggle={() => onToggle(it.id)}
+                />
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {arr.map((it) => (
-              <OptionCard
-                key={it.id}
-                id={it.id}
-                name={it.name}
-                type={it.type ?? undefined}
-                description={it.description ?? undefined}
-                picture_url={it.picture_url ?? undefined}
-                price={priceForCard(it) ?? undefined}
-                selected={isSelected(it.id)}
-                onToggle={() => onToggle(it.id)}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       {!groups.length && (
         <div className="text-sm text-gray-500">No hay elementos que coincidan con la búsqueda.</div>

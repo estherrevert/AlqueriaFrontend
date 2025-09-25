@@ -33,9 +33,26 @@ export const EventsHttpGateway: EventsGateway = {
     return (res?.data?.data ?? res?.data) as EventDetail;
   },
 
-  // 👇 NUEVO
-  async changeStatus(id: number, status: EventStatus): Promise<EventDetail> {
-    const res = await api.patch(`/api/v1/events/${id}/status`, { status });
+  async changeStatus(id, status) {
+    const res = await api.put(`/api/v1/events/${id}`, { status });
     return (res?.data?.data ?? res?.data) as EventDetail;
+  },
+
+  async update(id, payload) {
+    const res = await api.put(`/api/v1/events/${id}`, payload);
+    return (res?.data?.data ?? res?.data) as EventDetail;
+  },
+
+  async updateDate(id, dateISO) {
+    const res = await api.put(`/api/v1/events/${id}/date`, { date: dateISO });
+    return (res?.data?.data ?? res?.data) as EventDetail;
+  },
+
+  async attachUsers(id, userIds) {
+    await api.post(`/api/v1/events/${id}/users`, { user_ids: userIds });
+  },
+
+  async detachUser(id, userId) {
+    await api.delete(`/api/v1/events/${id}/users/${userId}`);
   },
 };

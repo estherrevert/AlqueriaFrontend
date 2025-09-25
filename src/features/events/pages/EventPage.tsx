@@ -7,7 +7,7 @@ import { makeEventsUseCases } from "@/application/events/usecases";
 import { EventsHttpGateway } from "@/infrastructure/http/events.gateway";
 import GeneralTab from "@/features/events/components/GeneralTab";
 import TablesPanel from "@/features/events/components/TablesTab/TablesPanel";
-import InventoryTab from "../components/InventoryTab";
+import InventoryTab from "@/features/events/components/InventoryTab/InventoryTab";
 import MenuTab from "../components/MenuTab/MenuTab";
 import TastingsMenuTab from "@/features/events/components/TastingsTab/TastingsMenuTab";
 
@@ -18,7 +18,13 @@ type EventHeaderDTO = {
   title: string;
   status: "reserved" | "confirmed" | "cancelled";
   date?: string | null;
-  clients?: { id: number; name: string }[];
+  users?: { id: number; name: string }[];   
+  counts?: {
+    attendees?: number | null;
+    bills?: number | null;
+    seating_tables?: number | null;
+    menus?: number | null;
+  };
 };
 
 export default function EventPage() {
@@ -29,21 +35,24 @@ export default function EventPage() {
   const [loading, setLoading] = useState(true);
   const [event, setEvent] = useState<EventHeaderDTO | null>(null);
 
+  async function load() {
+    const data = await eventsUC.get(eventId);
+    setEvent({
+      id: data.id,
+      title: data.title ?? "Evento",
+      status: data.status,
+      date: (data as any)?.day?.date ?? (data as any)?.date ?? null,
+      users: (data as any)?.users ?? undefined,     
+      counts: (data as any)?.counts ?? undefined,
+    });
+  }
+
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const data = await eventsUC.get(eventId);
-        if (!mounted) return;
-        setEvent({
-          id: data.id,
-          title: data.title,
-          status: data.status,
-          date: (data as any)?.day?.date ?? (data as any)?.date ?? null,
-          clients: (data as any)?.clients ?? [],
-        });
-      } catch {
-        setEvent(null);
+        setLoading(true);
+        await load();
       } finally {
         if (mounted) setLoading(false);
       }
@@ -65,18 +74,18 @@ export default function EventPage() {
     () => [
       { key: "general" as const, label: "GENERAL" },
       { key: "menu" as const, label: "MENÚ" },
-      { key: "tastings" as const, label: "PRUEBAS MENÚ" }, 
-      { key: "inventory" as const, label: "INVENTARIO" },
+      { key: "tastings" as const, label: "PRUEBAS MENÚ" },
       { key: "tables" as const, label: "MESAS" },
+      { key: "inventory" as const, label: "INVENTARIO" },
       { key: "files" as const, label: "ARCHIVOS" },
     ],
     []
   );
 
   return (
-    <main className="container max-w-6xl mx-auto px-3 py-4">
+    <main className="p-4">
       {loading ? (
-        <p>Cargando evento…</p>
+        <div className="text-sm text-gray-500">Cargando...</div>
       ) : event ? (
         <>
           <EventHeader
@@ -84,7 +93,11 @@ export default function EventPage() {
             title={event.title}
             status={event.status}
             date={event.date}
+            users={event.users}          
+          
             onStatusChanged={(next) => setEvent((prev) => (prev ? { ...prev, status: next } : prev))}
+            onReload={load}             
+          
           />
           <Tabs tabs={tabs} active={activeTab} onChange={onTabChange} />
 
@@ -98,8 +111,6 @@ export default function EventPage() {
             <MenuTab eventId={event.id} attendeesCount={event?.counts?.attendees ?? 0} />
           )}
           {activeTab === "tastings" && <TastingsMenuTab eventId={event.id} />}
-
-          
         </>
       ) : (
         <div className="text-sm text-red-600">No se encontró el evento.</div>

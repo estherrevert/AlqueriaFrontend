@@ -14,13 +14,13 @@ export const DaysHttpGateway = {
 
   async create(date: string): Promise<DayCoreDTO> {
     const r = await api.post<DayOneResponseDTO>("/api/v1/days", { date });
-    return r?.data?.data;
+    return r?.data?.data!;
   },
 
-  async getOrCreate(date: string): Promise<DayCoreDTO> {
-    const found = await this.getByDate(date);
-    if (found) return found;
-    return await this.create(date);
+  // ✅ NUEVO: usa el endpoint pensado para esto en tu back
+  async showOrCreate(date: string): Promise<DayCoreDTO> {
+    const r = await api.get<DayOneResponseDTO>("/api/v1/days/show-or-create", { params: { date } });
+    return r?.data?.data!;
   },
 
   async listRange(params: { from: string; to: string }): Promise<DayCoreDTO[]> {

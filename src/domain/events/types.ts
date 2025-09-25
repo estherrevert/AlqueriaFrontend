@@ -15,7 +15,7 @@ id: number;
 title: string | null;
 status: EventStatus;
 date: string | null; // derivado de day.date
-clients?: { id: number; name: string }[];
+users?: { id: number; name: string }[];
 counts?: {
 bills?: number | null;
 seating_tables?: number | null;
