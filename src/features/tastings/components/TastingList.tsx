@@ -39,9 +39,9 @@ export default function TastingList({ items, onEdit, showEventTitle = false }: T
               {t.title ?? `Prueba menú #${t.id}`}
             </div>
             <div className="text-xs text-gray-600">
-            
+              {formatEsDate(t.date)}
               {t.hour ? ` · ${t.hour}` : ""}
-              {typeof t.attendees === "number" ? ` · ${t.attendees} comensales` : ""}
+              {typeof t.attendees === "number" ? ` · ${t.attendees} asistentes` : ""}
               {showEventTitle && t.event?.id ? (
                 <>
                   {" · Evento: "}
