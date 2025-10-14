@@ -26,7 +26,8 @@ export default function WeekendsYear({ days = [], year }: Props) {
 
   const byDate = useMemo(() => {
     const m = new Map<string, DayDTO>();
-    for (const d of days) m.set(d.date, d);
+    for (const d of days) m.set(d.date,
+       d);
     return m;
   }, [days]);
 

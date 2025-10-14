@@ -64,7 +64,7 @@ export default function TastingsMenuTab({ eventId }: Props) {
         />
       )}
 
-      <div className="rounded-xl border border-[color:var(--color-beige)] bg-white p-3 shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-4">
         {items.length === 0 ? (
           <div className="text-sm text-gray-500">Aún no hay pruebas de menú asociadas al evento.</div>
         ) : (
@@ -73,7 +73,7 @@ export default function TastingsMenuTab({ eventId }: Props) {
       </div>
 
       {editing && (
-        <div className="rounded-xl border border-[color:var(--color-beige)] bg-white p-3 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-4">
           <TastingEditor tastingId={editing} onClose={() => setEditing(null)} />
         </div>
       )}

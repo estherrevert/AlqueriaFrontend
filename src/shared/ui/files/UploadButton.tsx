@@ -32,13 +32,7 @@ export default function UploadButton({ label, accept = "application/pdf", onFile
         type="button"
         onClick={pick}
         disabled={disabled}
-        className="
-          inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm
-          bg-white border-[var(--color-beige)] text-[var(--color-text-main)]
-          hover:bg-[var(--color-alt-bg)]
-          disabled:opacity-50 disabled:cursor-not-allowed
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]
-        "
+        className="px-3 py-1.5 rounded-md text-sm bg-secondary text-white hover:bg-secondary-hover"
       >
         {label}
       </button>

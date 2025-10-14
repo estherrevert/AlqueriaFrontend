@@ -14,7 +14,7 @@ const getDays = makeGetDaysUseCase(new CalendarHttpGateway());
 
 export default function CalendarPage() {
   const [mode, setMode] = useState<CalendarMode>("month");
-  const [pivot, setPivot] = useState(() => new Date()); // controla el mes/año visibles
+  const [pivot, setPivot] = useState(() => new Date());
 
   const queryParams = useMemo(() => {
     if (mode === "month") {
@@ -67,9 +67,9 @@ export default function CalendarPage() {
     <div className="space-y-4">
       <CalendarToolbar
         mode={mode}
-        onModeChange={(m) => setMode(m)}        // la Toolbar ya salta por año cuando mode === "weekends-year"
+        onModeChange={(m) => setMode(m)}        
         yearMonth={pivot}
-        onYearMonthChange={(d) => setPivot(d)}  // recibe addMonths(+/-12) en vista anual
+        onYearMonthChange={(d) => setPivot(d)}  
       />
 
       <Legend />

@@ -17,7 +17,7 @@ type Props = {
   onReload?: () => void;       // para refrescar EventPage tras guardar
 };
 
-// Tus estilos de estado (no toco)
+// Tus estilos de estado 
 const statusPillCls: Record<EventStatus, string> = {
   confirmed: "bg-green-100 text-green-800 border border-green-200",
   reserved: "bg-yellow-100 text-yellow-800 border border-yellow-200",
@@ -72,7 +72,7 @@ export default function EventHeader({
   }
 
   return (
-    <div className="bg-[var(--color-bg-main)] border border-[var(--color-beige)] rounded-xl p-4 mb-4">
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 mb-4">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold text-[var(--color-text-main)] truncate">
           {headerTitle}

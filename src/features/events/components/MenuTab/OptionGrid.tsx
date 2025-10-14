@@ -73,7 +73,7 @@ export default function OptionGrid<T extends Base>({
   }, [items, q, groupOrder]);
 
   return (
-    <div className="rounded-xl border border-[color:var(--color-beige)] bg-white p-3 shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">{title}</h3>
         <input

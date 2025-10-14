@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getUser } from "@/features/auth/api/auth.api";
+import Loader from "@/ui/Loader";
 
 export default function AuthGate() {
   const location = useLocation();
@@ -8,15 +9,15 @@ export default function AuthGate() {
   const { data: me, isLoading } = useQuery({
     queryKey: ["me"],
     queryFn: getUser,
-    retry: false,          // no reintentes infinito si da 401
+    retry: false,
   });
 
   if (isLoading) {
-    return <div className="p-6 text-sm text-gray-500">Cargando…</div>;
+    // Spinner lavanda centrado a pantalla completa
+    return <Loader fullScreen size="lg" label="Comprobando sesión…" />;
   }
 
   if (!me) {
-    // recuerda a dónde quería ir el usuario
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 

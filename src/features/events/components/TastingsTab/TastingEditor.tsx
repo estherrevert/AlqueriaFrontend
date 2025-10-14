@@ -197,7 +197,6 @@ export default function TastingEditor({ tastingId, onClose }: Props) {
           onToggle={toggleDish}
           groupOrder={["Aperitivos Cóctel", "Primer plato", "Sorbete", "Segundo plato", "Postre", "Tarta"]}
           searchPlaceholder="Buscar plato…"
-          // NUEVO:
           onSelectMany={selectManyDishes}
           onUnselectMany={unselectManyDishes}
         />

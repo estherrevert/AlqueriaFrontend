@@ -73,7 +73,7 @@ export default function TastingsByDayPage() {
       {error && <div className="text-sm text-[color:var(--color-alert)]">{error}</div>}
 
       {!loading && !error && (
-        <div className="rounded-xl border border-[color:var(--color-beige)] bg-white p-3 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-4">
           <TastingList items={items} onEdit={setEditingId} showEventTitle />
         </div>
       )}

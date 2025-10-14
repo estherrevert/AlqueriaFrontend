@@ -224,7 +224,7 @@ export default function InventoryTab({ eventId }: Props) {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-12 gap-3">
-        <div className="col-span-12 lg:col-span-8 space-y-4">
+        <div className="col-span-12 lg:col-span-8 space-y-4 bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
           <OptionGridInv
             title="Servilletas"
             items={mapGrid(catalog.napkins)}

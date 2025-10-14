@@ -11,13 +11,13 @@ export type FileItem = {
 
 type Props = {
   title: string;
-  items: FileItem[];              // para "single", 0..1 elementos
+  items: FileItem[];             
   onUpload: (f: File) => Promise<FileItem>;
   onDelete: (id: number) => Promise<void>;
   uploading?: boolean;
   loading?: boolean;
   emptyText: string;
-  single?: boolean;               // si true, muestra como único
+  single?: boolean;               
 };
 
 const fmt = (iso?: string | null) =>
@@ -35,11 +35,7 @@ export default function FileListPanel({
 
   return (
     <section
-      className="
-        bg-[var(--color-bg-main)] border border-[var(--color-beige)]
-        rounded-xl p-4 shadow-sm
-      "
-    >
+      className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-medium text-[var(--color-text-main)]">{title}</h3>
         <UploadButton label="Subir PDF" onFile={onUpload} disabled={uploading} />
@@ -76,14 +72,10 @@ export default function FileListPanel({
                       href={it.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="
-                        inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm
-                        bg-white border-[var(--color-beige)] text-[var(--color-text-main)]
-                        hover:bg-[var(--color-alt-bg)]
-                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-secondary)]
-                      "
+                      className="px-3 py-1.5 rounded-md text-sm  bg-primary text-white hover:bg-primary-hover"
+
                     >
-                      Ver / Descargar
+                    Descargar
                     </a>
 
                     <button

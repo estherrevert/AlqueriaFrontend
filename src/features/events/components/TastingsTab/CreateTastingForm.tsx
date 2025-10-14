@@ -40,10 +40,14 @@ export default function CreateTastingForm({ eventId, onCreated }: Props) {
     }
   };
 
+  const inputCls =
+    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-secondary/60 focus:border-secondary/60";
+  
+
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-xl border border-[color:var(--color-beige)] bg-[color:var(--color-bg-main)] p-4 shadow-sm"
+      className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-4"
     >
       <h3 className="mb-3 text-base font-bold text-[color:var(--color-text-main)]">
         Nueva prueba
@@ -68,7 +72,7 @@ export default function CreateTastingForm({ eventId, onCreated }: Props) {
               type="time"
               value={hour}
               onChange={(e) => setHour(e.target.value)}
-              className="w-full rounded-lg border border-[color:var(--color-beige)] px-2 py-1 outline-none focus:ring-2 focus:ring-[color:var(--color-secondary)]"
+              className={inputCls}       
             />
           </div>
 
@@ -79,8 +83,8 @@ export default function CreateTastingForm({ eventId, onCreated }: Props) {
               min={1}
               value={attendees}
               onChange={(e) => setAttendees(Number(e.target.value) || 1)}
-              className="w-full rounded-lg border border-[color:var(--color-beige)] px-2 py-1 outline-none focus:ring-2 focus:ring-[color:var(--color-secondary)]"
-            />
+              className={inputCls}            
+              />
           </div>
 
           <div>
@@ -93,7 +97,7 @@ export default function CreateTastingForm({ eventId, onCreated }: Props) {
               value={title}
               placeholder="Primera prueba"
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg border border-[color:var(--color-beige)] px-2 py-1 outline-none placeholder:text-gray-400 focus:ring-2 focus:ring-[color:var(--color-secondary)]"
+              className={inputCls}       
             />
           </div>
         </div>
