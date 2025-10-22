@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { makeEventDetailUseCases } from "@/application/eventDetail/usecases";
-import { fetchDetailSchema } from "@/infrastructure/http/detail-schema.gateway";
-import type { FormSchema } from "@/infrastructure/http/detail-schema.gateway";
+import { fetchDetailSchema, SectionDef } from "@/infrastructure/http/detail-schema.gateway";
 import FormRenderer from "@/features/shared/dynform/FormRenderer";
 import ViewRenderer from "@/features/shared/dynform/ViewRenderer";
 import PdfActions from "../../../shared/PdfActions";
@@ -11,7 +10,7 @@ type FormState = Record<string, any>;
 const uc = makeEventDetailUseCases();
 
 export default function DetailPanel({ eventId }: Props) {
-  const [schema, setSchema] = useState<FormSchema | null>(null);
+  const [schema, setSchema] = useState<SectionDef[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState<"view" | "edit">("view");

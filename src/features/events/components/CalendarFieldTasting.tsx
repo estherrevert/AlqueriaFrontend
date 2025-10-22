@@ -176,7 +176,7 @@ export default function CalendarFieldTasting({ value, onPicked }: Props) {
               }
             });
         }}
-        captionLayout="dropdown-buttons"
+        captionLayout="dropdown"
         modifiers={modifiers}
         modifiersStyles={modifiersStyles}
         disabled={disabled}

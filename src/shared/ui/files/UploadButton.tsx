@@ -3,7 +3,7 @@ import React, { useRef } from "react";
 type Props = {
   label: string;
   accept?: string;
-  onFile: (file: File) => void | Promise<void>;
+  onFile: (file: File) => void | Promise<any>;
   disabled?: boolean;
 };
 

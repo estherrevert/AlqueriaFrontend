@@ -40,7 +40,7 @@ export default function CalendarPage() {
   }, [mode, pivot]);
 
   const {
-    data: days = [] as DayDTO[],
+    data: days,
     isPending,
     isFetching,
     error,
@@ -60,7 +60,7 @@ export default function CalendarPage() {
         weekends: queryParams.weekends,
       }),
     staleTime: 5 * 60 * 1000,
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 
   return (
@@ -79,9 +79,9 @@ export default function CalendarPage() {
       {!isPending && isFetching && <div className="text-xs text-gray-400">Actualizando…</div>}
 
       {mode === "month" ? (
-        <MonthGrid days={days} pivotDate={queryParams.pivot} />
+        <MonthGrid days={days as any ?? []} pivotDate={queryParams.pivot} />
       ) : (
-        <WeekendsYear days={days} year={queryParams.year} />
+        <WeekendsYear days={days as any ?? []} year={queryParams.year} />
       )}
     </div>
   );

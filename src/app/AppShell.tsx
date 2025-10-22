@@ -8,7 +8,7 @@ import { getUser, logout as apiLogout } from "@/features/auth/api/auth.api";
 type NavItem = {
   to: string;
   label: string;
-  icon: (props: React.SVGProps<SVGSVGElement>) => JSX.Element;
+  icon: React.FC<React.SVGProps<SVGSVGElement>>;
   end?: boolean;
 };
 
@@ -27,7 +27,7 @@ export default function AppShell() {
   // Logout
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { mutate: doLogout, isLoading: loggingOut } = useMutation({
+  const { mutate: doLogout, isPending: loggingOut } = useMutation({
     mutationFn: apiLogout,
     onSettled: async () => {
       await qc.clear();
