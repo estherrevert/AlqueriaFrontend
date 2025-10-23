@@ -126,7 +126,7 @@ export default function EventPage() {
           {activeTab === "tables" && <TablesPanel eventId={event.id} />}
           {activeTab === "inventory" && <InventoryTab eventId={event.id} />}
           {activeTab === "menu" && (
-            <MenuTab eventId={event.id} attendeesCount={event?.counts?.attendees ?? 0} />
+            <MenuTab eventId={event.id} />
           )}
           {activeTab === "tastings" && <TastingsMenuTab eventId={event.id} />}
 

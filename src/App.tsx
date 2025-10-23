@@ -5,8 +5,9 @@ import LoginPage from "@/features/auth/pages/LoginPage";
 import CalendarPage from "@/features/calendar/pages/CalendarPage";
 import EventPage from "@/features/events/pages/EventPage";
 import NewEventPage from "@/features/events/pages/NewEventPage"; // <-- NUEVO
-import AppShell from "./components/layout/AppShell";
+import AppShell from "./app/AppShell";
 import BlockDaysPage from "./features/calendar/pages/BlockDaysPage";
+import { qk } from "@/shared/queryKeys";
 
 function AuthGate() {
 const { data: me, isLoading } = useQuery({ queryKey: qk.me, queryFn: getUser, retry: false });

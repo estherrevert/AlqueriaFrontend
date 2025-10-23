@@ -2,7 +2,7 @@
 export type EventSummary = {
 id: number;
 title: string | null;
-status?: string | null; // e.g. "reserved" | "confirmed" | others if added later
+status?: "reserved" | "confirmed" | "cancelled" | null;
 };
 
 
@@ -18,6 +18,7 @@ event_id: number | null;
 export type DayBucket = {
 date: string; // YYYY-MM-DD
 events: EventSummary[];
+tastings_count?: number;
 tastings: TastingSummary[];
 is_blocked?: boolean;
 };

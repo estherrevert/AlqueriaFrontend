@@ -2,11 +2,11 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { qk } from "@/shared/queryKeys";
 import { getUser } from "@/features/auth/api/auth.api";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, ReactElement } from "react";
 import { useToast } from "@/ui/Toast";
 
 type RoleName = "admin" | "chef";
-type Props = { allowed: RoleName[]; children: JSX.Element };
+type Props = { allowed: RoleName[]; children: ReactElement };
 
 export default function RequireRole({ allowed, children }: Props) {
   const loc = useLocation();

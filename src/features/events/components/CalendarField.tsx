@@ -141,7 +141,7 @@ export default function CalendarField({ value, onChange }: Props) {
           if (disabled(d)) return;
           onChange(toISO(d));
         }}
-        captionLayout="dropdown-buttons"
+        captionLayout="dropdown"
         modifiers={modifiers}
         modifiersStyles={modifiersStyles}
         disabled={disabled}

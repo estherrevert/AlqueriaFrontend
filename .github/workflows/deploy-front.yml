@@ -1,0 +1,39 @@
+name: Deploy Front (panel)
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_KEY }}
+
+      - name: Upload dist to server as release
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ${{ secrets.FRONT_PATH }}/releases/$SHA"
+          rsync -az --delete dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.FRONT_PATH }}/releases/$SHA/
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "\
+            ln -sfn ${{ secrets.FRONT_PATH }}/releases/$SHA ${{ secrets.FRONT_PATH }}/current && \
+            sudo chown -h www-data:www-data ${{ secrets.FRONT_PATH }}/current && \
+            sudo systemctl reload nginx || true \
+          "
+
