@@ -28,6 +28,7 @@ export default function WeekendsYear({ days = [], year }: Props) {
     const m = new Map<string, DayDTO>();
     for (const d of days) m.set(d.date,
        d);
+       
     return m;
   }, [days]);
 
