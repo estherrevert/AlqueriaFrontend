@@ -1,9 +1,10 @@
 // src/shared/api/client.ts
 import axios from "axios";
 import { HttpError } from "@/shared/errors"; // ⬅ importa tu clase
+import { getApiUrl } from "@/config/environment";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: getApiUrl(),
   withCredentials: true,
   xsrfCookieName: "XSRF-TOKEN",
   xsrfHeaderName: "X-XSRF-TOKEN",

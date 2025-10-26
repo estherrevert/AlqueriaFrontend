@@ -1,7 +1,8 @@
 import { MenuGatewayPort } from "@/domain/menu/ports";
 import { EventMenu, MenuCatalog, MenuDrinkSelection } from "@/domain/menu/types";
+import { getApiUrl } from "@/config/environment";
 
-const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "";
+const API_BASE = getApiUrl()?.replace(/\/$/, "") ?? "";
 
 // --- helpers CSRF ---
 function getCookie(name: string): string | null {

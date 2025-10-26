@@ -7,8 +7,9 @@ import {
   InventoryCatalogItem,
   InventorySelectedItem,
 } from "@/domain/inventory/types";
+import { getApiUrl } from "@/config/environment";
 
-const API_BASE = import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "";
+const API_BASE = getApiUrl()?.replace(/\/$/, "") ?? "";
 
 /* ------------ CSRF + HTTP ------------ */
 function getCookie(name: string): string | null {
