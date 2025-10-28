@@ -19,12 +19,20 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        run: |
+          set -euo pipefail
+          npm run build
 
       - name: Start SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.VPS_KEY }}
+
+      - name: Add host key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
       - name: Upload dist to server as release
         run: |
