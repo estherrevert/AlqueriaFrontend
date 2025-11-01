@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { makeEventDetailUseCases } from "@/application/eventDetail/usecases";
-import { fetchDetailSchema, SectionDef } from "@/infrastructure/http/detail-schema.gateway";
-import FormRenderer from "@/features/shared/dynform/FormRenderer";
+import {
+  fetchDetailSchema,
+  SectionDef,
+} from "@/infrastructure/http/detail-schema.gateway";
+import FormRendererImproved from "@/features/shared/dynform/FormRendererImproved";
 import ViewRenderer from "@/features/shared/dynform/ViewRenderer";
 import PdfActions from "../../../shared/PdfActions";
 
@@ -38,11 +41,18 @@ export default function DetailPanel({ eventId }: Props) {
         if (mounted) setLoading(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [eventId]);
 
-  const onFieldChange = (name: string, value: any) => setForm((s) => ({ ...s, [name]: value }));
-  const onCancel = () => { setForm(snapshot); setMode("view"); setMessage(null); };
+  const onFieldChange = (name: string, value: any) =>
+    setForm((s) => ({ ...s, [name]: value }));
+  const onCancel = () => {
+    setForm(snapshot);
+    setMode("view");
+    setMessage(null);
+  };
 
   const onSave = async () => {
     setSaving(true);
@@ -55,7 +65,11 @@ export default function DetailPanel({ eventId }: Props) {
       setForm(data);
       setSnapshot(data);
       setMode("view");
-      setMessage(dto.url ? "PDF generado correctamente." : "Guardado. Aún no hay un PDF creado.");
+      setMessage(
+        dto.url
+          ? "PDF generado correctamente."
+          : "Guardado. Aún no hay un PDF creado."
+      );
     } catch (e: any) {
       setMessage(e?.message ?? "Error al guardar.");
     } finally {
@@ -63,64 +77,75 @@ export default function DetailPanel({ eventId }: Props) {
     }
   };
 
-  if (loading || !schema) return <div className="text-sm text-gray-500">Cargando detalle…</div>;
+  if (loading || !schema)
+    return <div className="text-sm text-gray-500">Cargando detalle…</div>;
 
   return (
-    <section className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-4">
-      <header className="flex items-center justify-between">
-        <h3 className="font-semibold text-lg">Detalles del evento</h3>
-        {mode === "view" ? (
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 rounded-md text-sm bg-secondary text-white hover:bg-secondary-hover"
-              onClick={() => setMode("edit")} type="button">Editar</button>
-                      <PdfActions url={detailUrl} />
-
-          </div>
-
-
-        ) : (
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 rounded-md text-sm bg-gray-100 hover:bg-gray-200"
-              onClick={onCancel} type="button" disabled={saving}>Cancelar</button>
-            <button className="px-3 py-1.5 rounded-md text-sm bg-secondary text-white hover:bg-accent disabled:opacity-60"
-              onClick={onSave} type="button" disabled={saving}>
-              {saving ? "Guardando..." : "Guardar y generar PDF"}
-            </button>
-          </div>
-        )}
+    <div className="card overflow-hidden">
+      {/* Sticky header */}
+      <header className="sticky top-0 z-10 bg-white border-b border-neutral-200 px-6 py-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-lg text-text-main">
+            Detalles del evento
+          </h3>
+          {mode === "view" ? (
+            <div className="flex items-center gap-2">
+              <button
+                className="btn-secondary"
+                onClick={() => setMode("edit")}
+                type="button"
+              >
+                Editar
+              </button>
+              <PdfActions url={detailUrl} />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                className="btn-ghost"
+                onClick={onCancel}
+                type="button"
+                disabled={saving}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-secondary disabled:opacity-60"
+                onClick={onSave}
+                type="button"
+                disabled={saving}
+              >
+                {saving ? "Guardando..." : "Guardar y generar PDF"}
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
-      {mode === "view"
-        ? <ViewRenderer schema={schema} values={form} />
-        : <FormRenderer schema={schema} values={form} onChange={onFieldChange} />}
-
-      <footer className="flex items-center justify-between pt-2">
+      {/* Content */}
+      <div className="p-6">
         {mode === "view" ? (
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 rounded-md text-sm bg-secondary text-white hover:bg-secondary-hover"
-              onClick={() => setMode("edit")} type="button">Editar</button>
-                      <PdfActions url={detailUrl} />
-
-          </div>
-
-
+          <ViewRenderer schema={schema} values={form} />
         ) : (
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 rounded-md text-sm bg-gray-100 hover:bg-gray-200"
-              onClick={onCancel} type="button" disabled={saving}>Cancelar</button>
-            <button className="px-3 py-1.5 rounded-md text-sm bg-secondary text-white hover:bg-accent disabled:opacity-60"
-              onClick={onSave} type="button" disabled={saving}>
-              {saving ? "Guardando..." : "Guardar y generar PDF"}
-            </button>
+          <FormRendererImproved
+            schema={schema}
+            values={form}
+            onChange={onFieldChange}
+          />
+        )}
+
+        {message && (
+          <div className="mt-4 px-4 py-3 rounded-xl bg-accent border border-neutral-200">
+            <span
+              className={`text-sm font-medium ${
+                message.includes("Error") ? "text-alert" : "text-text-main"
+              }`}
+            >
+              {message}
+            </span>
           </div>
         )}
-      </footer>
-
-      {message && (
-        <div className="text-sm mt-1">
-          <span className={message.includes("Error") ? "text-red-600" : "text-green-700"}>{message}</span>
-        </div>
-      )}
-    </section>
+      </div>
+    </div>
   );
 }

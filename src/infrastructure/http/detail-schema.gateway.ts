@@ -1,6 +1,14 @@
 import { api } from "@/shared/api/client";
 
-export type FieldType = "text" | "textarea" | "time" | "number" | "phone" | "select" | "checkbox";
+export type FieldType =
+  | "text"
+  | "textarea"
+  | "time"
+  | "date"
+  | "number"
+  | "phone"
+  | "select"
+  | "checkbox";
 
 export type FieldDef = {
   name: string;
@@ -12,10 +20,17 @@ export type FieldDef = {
   required?: boolean;
 };
 
-export type SectionDef = { key: string; title: string; fields: FieldDef[] };
+export type SectionDef = {
+  key: string;
+  title: string;
+  icon?: string;
+  fields: FieldDef[];
+};
 export type FormSchema = { version: number; sections: SectionDef[] };
 
 export async function fetchDetailSchema(): Promise<FormSchema> {
-  const res = await api.get("/api/v1/events/detail/schema", { withCredentials: true });
+  const res = await api.get("/api/v1/events/detail/schema", {
+    withCredentials: true,
+  });
   return res.data as FormSchema;
 }
