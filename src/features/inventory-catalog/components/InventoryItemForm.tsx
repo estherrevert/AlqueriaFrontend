@@ -37,8 +37,8 @@ export default function InventoryItemForm({
     (async () => {
       try {
         setLoadingSuppliers(true);
-        const data = await suppliersUC.list();
-        if (alive) setSuppliers(data);
+        const result = await suppliersUC.list();
+        if (alive) setSuppliers(result.data);
       } catch (e: unknown) {
         if (alive)
           setError(

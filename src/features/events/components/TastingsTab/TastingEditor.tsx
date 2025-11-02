@@ -16,6 +16,13 @@ type SelectionState = {
   drinks: Map<number, number>;
 };
 
+type SelectedDrink = {
+  id: number;
+  name: string;
+  quantity: number;
+  type?: string | null;
+};
+
 export default function TastingEditor({ tastingId, onClose }: Props) {
   const uc = makeTastingsUseCases();
   const menuUC = makeMenuUseCases();
@@ -140,21 +147,12 @@ export default function TastingEditor({ tastingId, onClose }: Props) {
               }
             : null
         )
-        .filter(
-          (
-            d
-          ): d is {
-            id: number;
-            name: string;
-            quantity: number;
-            type?: string | null;
-          } => Boolean(d)
-        ),
+        .filter((d): d is SelectedDrink => d !== null),
     [sel.drinks, drinkMap]
   );
 
   const drinkGroups = useMemo(() => {
-    const map = groupByType(selectedDrinks);
+    const map = groupByType<SelectedDrink>(selectedDrinks);
     return Array.from(map.entries()).sort((a, b) =>
       a[0].localeCompare(b[0], "es", { sensitivity: "base" })
     );
