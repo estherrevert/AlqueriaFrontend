@@ -3,21 +3,25 @@ import { makeDishesUseCases } from "@/application/dishes/usecases";
 import { makeDrinksUseCases } from "@/application/drinks/usecases";
 import { makeInventoryItemsUseCases } from "@/application/inventory/usecases";
 import { makeSuppliersUseCases } from "@/application/suppliers/usecases";
+import { makeExtrasUseCases } from "@/application/extras/usecases";
 import type { Dish } from "@/domain/dishes/types";
 import type { Drink } from "@/domain/drinks/types";
 import type { InventoryItemList } from "@/domain/inventory/types";
 import type { Supplier } from "@/domain/suppliers/types";
+import type { Extra } from "@/domain/extras/types";
 import DishForm from "@/features/dishes/components/DishForm";
 import DrinkForm from "@/features/drinks/components/DrinkForm";
 import InventoryItemForm from "@/features/inventory-catalog/components/InventoryItemForm";
 import SupplierForm from "@/features/suppliers/components/SupplierForm";
+import ExtraForm from "@/features/extras/components/ExtraForm";
 import PlatosTab from "../tabs/PlatosTab";
 import BebidasTab from "../tabs/BebidasTab";
 import InventarioTab from "../tabs/InventarioTab";
 import ProveedoresTab from "../tabs/ProveedoresTab";
+import ExtrasTab from "../tabs/ExtrasTab";
 import TabButton from "../components/shared/TabButton";
 
-type TabType = "platos" | "bebidas" | "inventario" | "proveedores";
+type TabType = "platos" | "bebidas" | "inventario" | "proveedores" | "extras";
 type InventoryType =
   | "napkins"
   | "table-linens"
@@ -33,31 +37,35 @@ export default function ProductsManagementPage() {
   const drinksUC = makeDrinksUseCases();
   const inventoryUC = makeInventoryItemsUseCases();
   const suppliersUC = makeSuppliersUseCases();
+  const extrasUC = makeExtrasUseCases();
 
   // Data state
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [drinks, setDrinks] = useState<Drink[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItemList[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [extras, setExtras] = useState<Extra[]>([]);
 
   // Loading state
   const [loadingDishes, setLoadingDishes] = useState(true);
   const [loadingDrinks, setLoadingDrinks] = useState(true);
   const [loadingInventory, setLoadingInventory] = useState(false);
   const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+  const [loadingExtras, setLoadingExtras] = useState(false);
 
   // Error state
   const [errorDishes, setErrorDishes] = useState<string | null>(null);
   const [errorDrinks, setErrorDrinks] = useState<string | null>(null);
   const [errorInventory, setErrorInventory] = useState<string | null>(null);
   const [errorSuppliers, setErrorSuppliers] = useState<string | null>(null);
+  const [errorExtras, setErrorExtras] = useState<string | null>(null);
 
   // UI state
   const [activeTab, setActiveTab] = useState<TabType>("platos");
   const [searchQuery, setSearchQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState<
-    "dish" | "drink" | "inventory" | "supplier"
+    "dish" | "drink" | "extra" | "inventory" | "supplier"
   >("dish");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [inventoryType, setInventoryType] = useState<InventoryType>("napkins");
@@ -147,6 +155,27 @@ export default function ProductsManagementPage() {
     };
   }, [activeTab]);
 
+  // Load extras when tab changes
+  React.useEffect(() => {
+    if (activeTab !== "extras") return;
+    let alive = true;
+    (async () => {
+      setLoadingExtras(true);
+      setErrorExtras(null);
+      try {
+        const { data } = await extrasUC.list({ per_page: 100 });
+        if (alive) setExtras(data);
+      } catch (e: any) {
+        if (alive) setErrorExtras(e?.message ?? "Error cargando extras");
+      } finally {
+        if (alive) setLoadingExtras(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [activeTab]);
+
   // Filter dishes
   const filteredDishes = useMemo(() => {
     if (!searchQuery) return dishes;
@@ -179,6 +208,14 @@ export default function ProductsManagementPage() {
     );
   }, [suppliers, searchQuery]);
 
+  // Filter extras
+  const filteredExtras = useMemo(() => {
+    if (!searchQuery) return extras;
+    return extras.filter((e) =>
+      e.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [extras, searchQuery]);
+
   // Group dishes by category
   const dishesByCategory = useMemo(() => {
     const grouped: Record<string, Dish[]> = {};
@@ -202,7 +239,9 @@ export default function ProductsManagementPage() {
   }, [filteredDrinks]);
 
   // Handlers
-  const handleCreate = (type: "dish" | "drink" | "inventory" | "supplier") => {
+  const handleCreate = (
+    type: "dish" | "drink" | "extra" | "inventory" | "supplier"
+  ) => {
     setFormType(type);
     setEditingId(null);
     setShowForm(true);
@@ -210,7 +249,7 @@ export default function ProductsManagementPage() {
 
   const handleEdit = (
     id: number,
-    type: "dish" | "drink" | "inventory" | "supplier"
+    type: "dish" | "drink" | "extra" | "inventory" | "supplier"
   ) => {
     setFormType(type);
     setEditingId(id);
@@ -219,7 +258,7 @@ export default function ProductsManagementPage() {
 
   const handleDelete = async (
     id: number,
-    type: "dish" | "drink" | "inventory" | "supplier"
+    type: "dish" | "drink" | "extra" | "inventory" | "supplier"
   ) => {
     const message =
       type === "dish"
@@ -228,7 +267,9 @@ export default function ProductsManagementPage() {
         ? "¿Eliminar esta bebida?"
         : type === "inventory"
         ? "¿Eliminar este item?"
-        : "¿Eliminar este proveedor?";
+        : type === "supplier"
+        ? "¿Eliminar este proveedor?"
+        : "¿Eliminar este extra?";
     if (!confirm(message)) return;
     try {
       if (type === "dish") {
@@ -240,9 +281,12 @@ export default function ProductsManagementPage() {
       } else if (type === "inventory") {
         await inventoryUC.remove(inventoryType, id);
         setInventoryItems(inventoryItems.filter((i) => i.id !== id));
-      } else {
+      } else if (type === "supplier") {
         await suppliersUC.remove(id);
         setSuppliers(suppliers.filter((s) => s.id !== id));
+      } else {
+        await extrasUC.remove(id);
+        setExtras(extras.filter((e) => e.id !== id));
       }
     } catch (e: any) {
       alert(e?.message ?? "Error al eliminar");
@@ -268,9 +312,12 @@ export default function ProductsManagementPage() {
           per_page: 100,
         });
         setInventoryItems(data);
-      } else {
+      } else if (formType === "supplier") {
         const { data } = await suppliersUC.list({ per_page: 100 });
         setSuppliers(data);
+      } else {
+        const { data } = await extrasUC.list({ per_page: 100 });
+        setExtras(data);
       }
     } catch (e: any) {
       if (formType === "dish") {
@@ -279,8 +326,10 @@ export default function ProductsManagementPage() {
         setErrorDrinks(e?.message ?? "Error recargando");
       } else if (formType === "inventory") {
         setErrorInventory(e?.message ?? "Error recargando");
-      } else {
+      } else if (formType === "supplier") {
         setErrorSuppliers(e?.message ?? "Error recargando");
+      } else {
+        setErrorExtras(e?.message ?? "Error recargando");
       }
     }
   };
@@ -314,6 +363,8 @@ export default function ProductsManagementPage() {
       ? loadingInventory
       : activeTab === "proveedores"
       ? loadingSuppliers
+      : activeTab === "extras"
+      ? loadingExtras
       : false;
 
   const error =
@@ -325,6 +376,8 @@ export default function ProductsManagementPage() {
       ? errorInventory
       : activeTab === "proveedores"
       ? errorSuppliers
+      : activeTab === "extras"
+      ? errorExtras
       : null;
 
   return (
@@ -351,6 +404,12 @@ export default function ProductsManagementPage() {
             onClick={() => setActiveTab("bebidas")}
             icon="🍷"
             label="Bebidas"
+          />
+          <TabButton
+            active={activeTab === "extras"}
+            onClick={() => setActiveTab("extras")}
+            icon="⭐"
+            label="Extras"
           />
           <TabButton
             active={activeTab === "inventario"}
@@ -434,6 +493,18 @@ export default function ProductsManagementPage() {
               onDelete={(id) => handleDelete(id, "supplier")}
             />
           )}
+
+        {activeTab === "extras" && !loadingExtras && !errorExtras && (
+          <ExtrasTab
+            extras={extras}
+            filteredExtras={filteredExtras}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onCreate={() => handleCreate("extra")}
+            onEdit={(id) => handleEdit(id, "extra")}
+            onDelete={(id) => handleDelete(id, "extra")}
+          />
+        )}
       </div>
 
       {/* Modal Overlay */}
@@ -455,6 +526,12 @@ export default function ProductsManagementPage() {
             ) : formType === "supplier" ? (
               <SupplierForm
                 supplierId={editingId}
+                onClose={handleFormClose}
+                onSuccess={handleFormSuccess}
+              />
+            ) : formType === "extra" ? (
+              <ExtraForm
+                extraId={editingId}
                 onClose={handleFormClose}
                 onSuccess={handleFormSuccess}
               />
