@@ -33,29 +33,28 @@ export default function CreateTastingForm({ eventId, onCreated }: Props) {
         title: title || null,
       });
       onCreated();
-    } catch (e: any) {
-      setError(e?.message ?? "No se pudo crear la prueba de menú");
+    } catch (e: unknown) {
+      setError(
+        e instanceof Error ? e.message : "No se pudo crear la prueba de menú"
+      );
     } finally {
       setSaving(false);
     }
   };
 
   const inputCls =
-    "w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-secondary/60 focus:border-secondary/60";
-  
+    "w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-text-main placeholder:text-muted outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-neutral-300 transition-colors";
 
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-4"
+      className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm space-y-4"
     >
-      <h3 className="mb-3 text-base font-bold text-[color:var(--color-text-main)]">
-        Nueva prueba
-      </h3>
+      <h3 className="mb-3 text-base font-bold text-text-main">Nueva prueba</h3>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-gray-600">Día</label>
+          <label className="mb-1 block text-xs font-medium label">Día</label>
           <CalendarFieldTasting
             value={dateISO ?? undefined}
             onPicked={(id, iso) => {
@@ -67,29 +66,31 @@ export default function CreateTastingForm({ eventId, onCreated }: Props) {
 
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Hora</label>
+            <label className="mb-1 block text-xs font-medium label">Hora</label>
             <input
               type="time"
               value={hour}
               onChange={(e) => setHour(e.target.value)}
-              className={inputCls}       
+              className={inputCls}
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">Asistentes</label>
+            <label className="mb-1 block text-xs font-medium label">
+              Asistentes
+            </label>
             <input
               type="number"
               min={1}
               value={attendees}
               onChange={(e) => setAttendees(Number(e.target.value) || 1)}
-              className={inputCls}            
-              />
+              className={inputCls}
+            />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-600">
-              Título 
+            <label className="mb-1 block text-xs font-medium label">
+              Título
             </label>
             <input
               type="text"
@@ -97,19 +98,19 @@ export default function CreateTastingForm({ eventId, onCreated }: Props) {
               value={title}
               placeholder="Primera prueba"
               onChange={(e) => setTitle(e.target.value)}
-              className={inputCls}       
+              className={inputCls}
             />
           </div>
         </div>
       </div>
 
-      {error && <div className="mt-3 text-sm text-[color:var(--color-alert)]">{error}</div>}
+      {error && <div className="mt-3 text-sm text-alert">{error}</div>}
 
       <div className="mt-4 flex gap-2">
         <button
           type="submit"
           disabled={disabled || saving}
-          className="rounded-xl bg-[color:var(--color-secondary)] px-4 py-2 text-sm text-white shadow-sm transition-colors hover:bg-[color:var(--color-secondary-hover)] disabled:opacity-60"
+          className="rounded-xl bg-secondary px-4 py-2 text-sm text-white shadow-sm transition-colors hover:bg-secondary-hover disabled:opacity-60"
         >
           {saving ? "Creando…" : "Crear prueba"}
         </button>

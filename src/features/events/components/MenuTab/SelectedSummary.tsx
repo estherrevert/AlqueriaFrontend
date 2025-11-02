@@ -1,7 +1,10 @@
 import React, { useMemo } from "react";
 import { CatalogDish, CatalogDrink, CatalogExtra } from "@/domain/menu/types";
 
-const nf = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" });
+const nf = new Intl.NumberFormat("es-ES", {
+  style: "currency",
+  currency: "EUR",
+});
 
 type Props = {
   dishes: CatalogDish[];
@@ -24,28 +27,26 @@ type Props = {
 function priceOnce(item: { pricing?: any }): number {
   const p = item.pricing ?? {};
   if (typeof p.per_person === "number") return p.per_person;
-  if (typeof p.per_unit === "number")   return p.per_unit;
-  if (typeof p.global === "number")     return p.global;
+  if (typeof p.per_unit === "number") return p.per_unit;
+  if (typeof p.global === "number") return p.global;
   return 0;
 }
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-// Orden de subcategorías de platos
+// Orden de subcategorías de platos (debe coincidir con MenuTab.tsx)
 const DISH_ORDER = [
- "Aperitivos Cóctel", // <-- tu nombre exacto en BBDD
-  "Primer plato",
+  "Aperitivos Cóctel",
+  "Primer Plato",
   "Sorbete",
-  "Segundo plato",
+  "Segundo Plato",
   "Postres",
-  "Tarta",
-];
+  "Tartas",
+].map((s) => s.toLowerCase());
 
-const normalize = (s: string) => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 const dishIndex = (label?: string | null) => {
   if (!label) return Number.MAX_SAFE_INTEGER;
-  const n = normalize(label);
-  const order = DISH_ORDER.map(normalize);
-  const i = order.indexOf(n);
+  const labelLower = label.toLowerCase();
+  const i = DISH_ORDER.indexOf(labelLower);
   return i === -1 ? Number.MAX_SAFE_INTEGER : i;
 };
 
@@ -60,8 +61,19 @@ function groupByType<T extends { type?: string | null }>(arr: T[]) {
 }
 
 export default function SelectedSummary({
-  dishes, drinks, extras, adults, children, staff,
-  onRemoveDish, onRemoveDrink, onDecExtra, onIncExtra, onSave, pdfUrl, saving,
+  dishes,
+  drinks,
+  extras,
+  adults,
+  children,
+  staff,
+  onRemoveDish,
+  onRemoveDrink,
+  onDecExtra,
+  onIncExtra,
+  onSave,
+  pdfUrl,
+  saving,
 }: Props) {
   // Menú por persona (platos + bebidas ×1)
   const menuPerPerson = useMemo(() => {
@@ -93,7 +105,8 @@ export default function SelectedSummary({
 
   // Cálculo de extras
   const extrasBlock = useMemo(() => {
-    let perPerson = 0, globals = 0;
+    let perPerson = 0,
+      globals = 0;
     for (const e of extras) {
       const q = Math.max(1, e.quantity ?? 1);
       const p = e.pricing ?? {};
@@ -113,7 +126,10 @@ export default function SelectedSummary({
       const p = e.pricing ?? {};
       if (typeof p.per_person === "number") {
         const label = `${e.name} × ${adults} adultos${q > 1 ? ` × ${q}` : ""}`;
-        perPersonLines.push({ label, amount: round2(p.per_person * adults * q) });
+        perPersonLines.push({
+          label,
+          amount: round2(p.per_person * adults * q),
+        });
       } else if (typeof p.global === "number") {
         const label = `${e.name} (precio global)${q > 1 ? ` × ${q}` : ""}`;
         globalLines.push({ label, amount: round2(p.global * q) });
@@ -130,7 +146,7 @@ export default function SelectedSummary({
 
   const totals = useMemo(() => {
     const baseMenu = menuPerPerson * adults;
-    const extrasCost = (extrasBlock.perPerson * adults) + extrasBlock.globals;
+    const extrasCost = extrasBlock.perPerson * adults + extrasBlock.globals;
     const sum = baseMenu + extrasCost + childrenCost + staffCost;
     return {
       baseMenu: round2(baseMenu),
@@ -146,20 +162,34 @@ export default function SelectedSummary({
     <div className="space-y-4">
       {/* MENÚ */}
       <Block title="Menú (precio por persona)">
-        {(!dishes.length && !drinks.length) ? <Empty/> : (
+        {!dishes.length && !drinks.length ? (
+          <Empty />
+        ) : (
           <>
             {/* Platos */}
             {dishGroupsOrdered.map(([label, arr]) => (
               <div key={`dish-group-${label}`} className="mb-2">
-                                    <div className="text-[11px] font-medium text-secondary mb-1">{label}</div>
+                <div className="text-[11px] font-medium text-secondary mb-1">
+                  {label}
+                </div>
 
                 <ul className="space-y-1 text-sm">
-                  {arr.map(d => (
-                    <li key={`dish-${d.id}`} className="flex items-center justify-between gap-2">
+                  {arr.map((d) => (
+                    <li
+                      key={`dish-${d.id}`}
+                      className="flex items-center justify-between gap-2"
+                    >
                       <div className="truncate">{d.name}</div>
                       <div className="flex items-center gap-2">
-                        <div className="text-xs text-gray-700">{nf.format(priceOnce(d))}</div>
-                        <button className="text-xs px-2 py-0.5 rounded-md border" onClick={() => onRemoveDish(d.id)}>Quitar</button>
+                        <div className="text-xs text-gray-700">
+                          {nf.format(priceOnce(d))}
+                        </div>
+                        <button
+                          className="text-xs px-2 py-0.5 rounded-md border"
+                          onClick={() => onRemoveDish(d.id)}
+                        >
+                          Quitar
+                        </button>
                       </div>
                     </li>
                   ))}
@@ -175,14 +205,26 @@ export default function SelectedSummary({
                 </div>
                 {drinkGroups.map(([label, arr]) => (
                   <div key={`drink-group-${label}`} className="mb-2">
-                    <div className="text-[11px] font-medium text-secondary mb-1">{label}</div>
+                    <div className="text-[11px] font-medium text-secondary mb-1">
+                      {label}
+                    </div>
                     <ul className="space-y-1 text-sm">
-                      {arr.map(d => (
-                        <li key={`drink-${d.id}`} className="flex items-center justify-between gap-2">
+                      {arr.map((d) => (
+                        <li
+                          key={`drink-${d.id}`}
+                          className="flex items-center justify-between gap-2"
+                        >
                           <div className="truncate">{d.name}</div>
                           <div className="flex items-center gap-2">
-                            <div className="text-xs text-gray-700">{nf.format(priceOnce(d))}</div>
-                            <button className="text-xs px-2 py-0.5 rounded-md border" onClick={() => onRemoveDrink(d.id)}>Quitar</button>
+                            <div className="text-xs text-gray-700">
+                              {nf.format(priceOnce(d))}
+                            </div>
+                            <button
+                              className="text-xs px-2 py-0.5 rounded-md border"
+                              onClick={() => onRemoveDrink(d.id)}
+                            >
+                              Quitar
+                            </button>
                           </div>
                         </li>
                       ))}
@@ -225,19 +267,36 @@ export default function SelectedSummary({
       {/* EXTRAS & TOTALES */}
       <Block title="Extras & Totales">
         {/* Lista editable de extras seleccionados */}
-        {!extras.length ? <Empty/> : (
+        {!extras.length ? (
+          <Empty />
+        ) : (
           <ul className="space-y-1 text-sm mb-3">
-            {extras.map(e => (
-              <li key={`extra-${e.id}`} className="flex items-center justify-between gap-2">
+            {extras.map((e) => (
+              <li
+                key={`extra-${e.id}`}
+                className="flex items-center justify-between gap-2"
+              >
                 <div className="truncate">{e.name}</div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500">
-                    {typeof e.pricing?.per_person === "number" ? "p./persona" : "global"}
+                    {typeof e.pricing?.per_person === "number"
+                      ? "p./persona"
+                      : "global"}
                   </span>
                   <div className="flex items-center border rounded-md">
-                    <button className="px-2 py-0.5 text-xs" onClick={() => onDecExtra(e.id)}>-</button>
+                    <button
+                      className="px-2 py-0.5 text-xs"
+                      onClick={() => onDecExtra(e.id)}
+                    >
+                      -
+                    </button>
                     <span className="px-2 text-xs">{e.quantity ?? 1}</span>
-                    <button className="px-2 py-0.5 text-xs" onClick={() => onIncExtra(e.id)}>+</button>
+                    <button
+                      className="px-2 py-0.5 text-xs"
+                      onClick={() => onIncExtra(e.id)}
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
               </li>
@@ -248,13 +307,23 @@ export default function SelectedSummary({
         {/* Desglose claro */}
         {!!extras.length && (
           <div className="mb-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-secondary)] mb-1">Desglose extras</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-secondary)] mb-1">
+              Desglose extras
+            </div>
             <div className="space-y-1 text-sm">
               {extrasBreakdown.perPersonLines.map((l, i) => (
-                <Row key={`per-${i}`} label={l.label} value={nf.format(l.amount)} />
+                <Row
+                  key={`per-${i}`}
+                  label={l.label}
+                  value={nf.format(l.amount)}
+                />
               ))}
               {extrasBreakdown.globalLines.map((l, i) => (
-                <Row key={`glob-${i}`} label={l.label} value={nf.format(l.amount)} />
+                <Row
+                  key={`glob-${i}`}
+                  label={l.label}
+                  value={nf.format(l.amount)}
+                />
               ))}
             </div>
           </div>
@@ -262,13 +331,30 @@ export default function SelectedSummary({
 
         {/* Totales */}
         <div className="space-y-1 text-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-secondary)] mb-1">TOTALES</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-secondary)] mb-1">
+            TOTALES
+          </div>
 
-          <Row label={`Menú × ${adults} adultos`} value={nf.format(totals.baseMenu)} />
-          <Row label="Extras (p./persona × adultos)" value={nf.format(totals.extrasPerPersonBlock)} />
-          <Row label="Extras (globales)" value={nf.format(totals.extrasGlobalBlock)} />
-          <Row label={`Niños × 25€ × ${children}`} value={nf.format(totals.childrenCost)} />
-          <Row label={`Staff × 32€ × ${staff}`} value={nf.format(totals.staffCost)} />
+          <Row
+            label={`Menú × ${adults} adultos`}
+            value={nf.format(totals.baseMenu)}
+          />
+          <Row
+            label="Extras (p./persona × adultos)"
+            value={nf.format(totals.extrasPerPersonBlock)}
+          />
+          <Row
+            label="Extras (globales)"
+            value={nf.format(totals.extrasGlobalBlock)}
+          />
+          <Row
+            label={`Niños × 25€ × ${children}`}
+            value={nf.format(totals.childrenCost)}
+          />
+          <Row
+            label={`Staff × 32€ × ${staff}`}
+            value={nf.format(totals.staffCost)}
+          />
           <div className="border-t pt-2 mt-2 font-semibold flex items-center justify-between">
             <div>Total Boda</div>
             <div>{nf.format(totals.total)}</div>
@@ -288,10 +374,18 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Block({ title, children }: { title: string; children: React.ReactNode }) {
+function Block({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="rounded-2xl border bg-white p-3">
-      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]">{title}</div>
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[color:var(--color-primary)]">
+        {title}
+      </div>
       {children}
     </div>
   );

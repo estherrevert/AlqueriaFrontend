@@ -122,6 +122,20 @@ export default function FormRendererImproved({
                       </label>
                     ))}
                   </div>
+
+                  {/* Botón cerrar al final para secciones largas */}
+                  <div className="mt-4 pt-3 border-t border-neutral-200 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(section.key)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-secondary hover:text-secondary-hover transition-colors"
+                    >
+                      <div className="transform rotate-180">
+                        <ChevronDown />
+                      </div>
+                      <span>Cerrar {section.title}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
