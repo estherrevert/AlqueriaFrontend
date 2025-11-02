@@ -135,19 +135,19 @@ export default function TastingEditor({ tastingId, onClose }: Props) {
   }, [selectedDishes]);
 
   const selectedDrinks = useMemo(
-    () =>
-      [...sel.drinks.entries()]
-        .map(([id, q]) =>
-          drinkMap.get(id)
-            ? {
-                id,
-                name: drinkMap.get(id)!.name,
-                quantity: q,
-                type: drinkMap.get(id)!.type,
-              }
-            : null
-        )
-        .filter((d): d is SelectedDrink => d !== null),
+    (): SelectedDrink[] =>
+      [...sel.drinks.entries()].flatMap(([id, q]) => {
+        const drink = drinkMap.get(id);
+        if (!drink) return [];
+        return [
+          {
+            id,
+            name: drink.name,
+            quantity: q,
+            type: drink.type,
+          },
+        ];
+      }),
     [sel.drinks, drinkMap]
   );
 
