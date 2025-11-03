@@ -1,4 +1,12 @@
-export type FieldType = "text" | "textarea" | "time" | "number" | "phone" | "select" | "checkbox";
+export type FieldType =
+  | "text"
+  | "textarea"
+  | "time"
+  | "date"
+  | "number"
+  | "phone"
+  | "select"
+  | "checkbox";
 
 export type FieldDef = {
   name: string;
@@ -13,6 +21,7 @@ export type FieldDef = {
 export type SectionDef = {
   key: string;
   title: string;
+  icon?: string;
   fields: FieldDef[];
 };
 

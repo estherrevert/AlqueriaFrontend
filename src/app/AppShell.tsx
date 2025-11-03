@@ -16,13 +16,18 @@ const navItems: NavItem[] = [
   { to: "/calendar", label: "Calendario", icon: CalendarIcon, end: true },
   { to: "/calendar/block-days", label: "Bloquear días", icon: LockIcon },
   { to: "/events/new", label: "Nuevo evento", icon: PlusIcon },
+  { to: "/dishes", label: "Gestión de productos", icon: ProductsIcon },
 ];
 
 export default function AppShell() {
   const [open, setOpen] = useState(false);
 
   // User (por si quieres mostrar nombre/rol)
-  const { data: me } = useQuery({ queryKey: qk.me, queryFn: getUser, retry: false });
+  const { data: me } = useQuery({
+    queryKey: qk.me,
+    queryFn: getUser,
+    retry: false,
+  });
 
   // Logout
   const navigate = useNavigate();
@@ -57,7 +62,9 @@ export default function AppShell() {
                 <span className="text-text-main text-sm font-semibold">AX</span>
               </div>
               <div className="leading-tight">
-                <h1 className="font-semibold text-lg tracking-tight">Alquería del Xúquer</h1>
+                <h1 className="font-semibold text-lg tracking-tight">
+                  Alquería del Xúquer
+                </h1>
                 <p className="text-xs text-neutral-600">Gestión de eventos</p>
               </div>
             </div>
@@ -111,7 +118,10 @@ export default function AppShell() {
       {/* DRAWER móvil */}
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setOpen(false)}
+          />
           <div className="absolute left-0 top-0 h-full w-80 bg-white p-4 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -206,6 +216,19 @@ function LogoutIcon(props: React.SVGProps<SVGSVGElement>) {
     <svg viewBox="0 0 24 24" fill="none" {...props}>
       <path d="M15 12H3M11 8l-4 4 4 4" stroke="currentColor" strokeWidth="2" />
       <path d="M15 3h3a3 3 0 013 3v12a3 3 0 01-3 3h-3" stroke="currentColor" />
+    </svg>
+  );
+}
+function ProductsIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" {...props}>
+      <path
+        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

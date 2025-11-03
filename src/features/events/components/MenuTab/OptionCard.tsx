@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 type Props = {
   id: number;
@@ -11,39 +11,76 @@ type Props = {
   onToggle: () => void;
 };
 
-const nf = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" });
+const nf = new Intl.NumberFormat("es-ES", {
+  style: "currency",
+  currency: "EUR",
+});
 
 export default function OptionCard({
-  name, type, description, picture_url, price, selected, onToggle,
+  name,
+  type,
+  description,
+  picture_url,
+  price,
+  selected,
+  onToggle,
 }: Props) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      className={[
-        "w-full text-left rounded-2xl border p-3 transition",
-        selected ? "border-[color:var(--color-secondary)] shadow-sm bg-white" : "border-gray-200 hover:border-gray-300 bg-white",
-      ].join(" ")}
-    >
-      <div className="aspect-video w-full rounded-xl bg-[color:var(--color-alt-bg)] overflow-hidden mb-2">
-        {picture_url ? (
-          <img src={picture_url} alt={name} className="w-full h-full object-cover" loading="lazy" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">Sin foto</div>
-        )}
-      </div>
-
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="font-medium truncate">{name}</div>
-          {type ? <div className="text-xs text-gray-500 truncate">{type}</div> : null}
+    <div className="relative group">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={[
+          "w-full h-full flex flex-col text-left rounded-xl border p-3 transition-all hover:shadow-lg hover:-translate-y-1",
+          selected
+            ? "border-secondary shadow-md bg-accent"
+            : "border-neutral-200 hover:border-neutral-300 bg-white",
+        ].join(" ")}
+      >
+        {/* Imagen */}
+        <div className="aspect-video w-full rounded-lg bg-neutral-100 overflow-hidden mb-2">
+          {picture_url ? (
+            <img
+              src={picture_url}
+              alt={name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-xs text-muted">
+              Sin foto
+            </div>
+          )}
         </div>
-        <div className="mt-0.5 text-xs text-gray-700 shrink-0">
-          {typeof price === "number" ? nf.format(price) : ""}
-        </div>
-      </div>
 
-      {description ? <div className="mt-1.5 text-xs text-gray-600 line-clamp-2">{description}</div> : null}
-    </button>
+        {/* Contenido */}
+        <div className="flex flex-col flex-1">
+          <div
+            className="font-medium text-text-main text-[0.95rem] leading-tight mb-1 line-clamp-2"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+          >
+            {name}
+          </div>
+
+          {type && <div className="text-xs text-muted mb-2">{type}</div>}
+
+          {price && (
+            <div className="mt-auto text-sm font-semibold text-text-main">
+              {nf.format(price)}
+            </div>
+          )}
+        </div>
+      </button>
+
+      {/* Tooltip para nombre largo */}
+      {showTooltip && name.length > 30 && (
+        <div className="absolute z-50 px-3 py-2 bg-neutral-900 text-white text-xs rounded-lg shadow-lg pointer-events-none whitespace-normal max-w-xs">
+          {name}
+        </div>
+      )}
+    </div>
   );
 }

@@ -10,7 +10,7 @@ import {
   MenuDrinkSelection,
   MenuExtraSelection,
 } from "@/domain/menu/types";
-import OptionGrid from "./OptionGrid";
+import OptionGridImproved from "./OptionGridImproved";
 import SelectedSummary from "./SelectedSummary";
 import PdfActions from "@/features/shared/PdfActions";
 
@@ -20,13 +20,13 @@ const uc = makeMenuUseCases();
 const seatingUC = makeEventSeatingUseCases();
 
 const DISH_GROUP_ORDER = [
-  "Aperitivos Cóctel", 
-  "Primer plato",
+  "Aperitivos Cóctel",
+  "Primer Plato",
   "Sorbete",
-  "Segundo plato",
+  "Segundo Plato",
   "Postres",
-  "Tarta",
-].map(s => s.toLowerCase());
+  "Tartas",
+].map((s) => s.toLowerCase());
 
 type SelectionState = {
   dishes: Set<number>;
@@ -69,56 +69,128 @@ export default function MenuTab({ eventId }: Props) {
         setMenu(m);
 
         // Hidratar selección
-        const next: SelectionState = { dishes: new Set(), drinks: new Map(), extras: new Map() };
-        const dishIds = (m.dish_ids ?? (m.dishes ? m.dishes.map((d) => d.id) : [])) as number[];
+        const next: SelectionState = {
+          dishes: new Set(),
+          drinks: new Map(),
+          extras: new Map(),
+        };
+        const dishIds = (m.dish_ids ??
+          (m.dishes ? m.dishes.map((d) => d.id) : [])) as number[];
         dishIds.forEach((id) => next.dishes.add(id));
-        (m.drinks ?? []).forEach((d) => next.drinks.set(d.id, Math.max(1, d.quantity ?? 1)));
-        (m.extras ?? []).forEach((e) => next.extras.set(e.id, Math.max(1, e.quantity ?? 1)));
+        (m.drinks ?? []).forEach((d) =>
+          next.drinks.set(d.id, Math.max(1, d.quantity ?? 1))
+        );
+        (m.extras ?? []).forEach((e) =>
+          next.extras.set(e.id, Math.max(1, e.quantity ?? 1))
+        );
         setSel(next);
 
         const t = seating.totals;
         setAdults(t?.adults ?? 0);
         setChildren(t?.children ?? 0);
         setStaff(t?.staff ?? 0);
-      } catch (e: any) {
-        setError(e?.message ?? "Error cargando menú");
+      } catch (error: unknown) {
+        setError(
+          error instanceof Error ? error.message : "Error cargando menú"
+        );
       } finally {
         if (mounted) setLoading(false);
       }
     })();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [eventId]);
 
   // Mapas para lookup
-  const dishMap  = useMemo(() => new Map((catalog?.dishes ?? []).map(d => [d.id, d])), [catalog]);
-  const drinkMap = useMemo(() => new Map((catalog?.drinks ?? []).map(d => [d.id, d])), [catalog]);
-  const extraMap = useMemo(() => new Map((catalog?.extras ?? []).map(e => [e.id, e])), [catalog]);
+  const dishMap = useMemo(
+    () => new Map((catalog?.dishes ?? []).map((d) => [d.id, d])),
+    [catalog]
+  );
+  const drinkMap = useMemo(
+    () => new Map((catalog?.drinks ?? []).map((d) => [d.id, d])),
+    [catalog]
+  );
+  const extraMap = useMemo(
+    () => new Map((catalog?.extras ?? []).map((e) => [e.id, e])),
+    [catalog]
+  );
 
   // Seleccionados como arrays completos
   const selectedDishes: CatalogDish[] = useMemo(
-    () => [...sel.dishes].map(id => dishMap.get(id)).filter(Boolean) as CatalogDish[],
+    () =>
+      [...sel.dishes]
+        .map((id) => dishMap.get(id))
+        .filter(Boolean) as CatalogDish[],
     [sel.dishes, dishMap]
   );
   const selectedDrinks: (CatalogDrink & { quantity: number })[] = useMemo(
-    () => [...sel.drinks.entries()].map(([id, q]) => ({ ...(drinkMap.get(id) as CatalogDrink), quantity: q }))
-          .filter(Boolean) as any,
+    () =>
+      [...sel.drinks.entries()]
+        .map(([id, q]) => ({
+          ...(drinkMap.get(id) as CatalogDrink),
+          quantity: q,
+        }))
+        .filter((d): d is CatalogDrink & { quantity: number } => Boolean(d)),
     [sel.drinks, drinkMap]
   );
   const selectedExtras: (CatalogExtra & { quantity: number })[] = useMemo(
-    () => [...sel.extras.entries()].map(([id, q]) => ({ ...(extraMap.get(id) as CatalogExtra), quantity: q }))
-          .filter(Boolean) as any,
+    () =>
+      [...sel.extras.entries()]
+        .map(([id, q]) => ({
+          ...(extraMap.get(id) as CatalogExtra),
+          quantity: q,
+        }))
+        .filter((e): e is CatalogExtra & { quantity: number } => Boolean(e)),
     [sel.extras, extraMap]
   );
 
   // Handlers
-  const toggleDish  = (id: number) => setSel(s => { const d = new Set(s.dishes); d.has(id) ? d.delete(id) : d.add(id); return { ...s, dishes: d }; });
-  const toggleDrink = (id: number) => setSel(s => { const d = new Map(s.drinks); d.has(id) ? d.delete(id) : d.set(id, 1); return { ...s, drinks: d }; });
-  const toggleExtra = (id: number) => setSel(s => { const d = new Map(s.extras); d.has(id) ? d.delete(id) : d.set(id, 1); return { ...s, extras: d }; });
+  const toggleDish = (id: number) =>
+    setSel((s) => {
+      const d = new Set(s.dishes);
+      if (d.has(id)) d.delete(id);
+      else d.add(id);
+      return { ...s, dishes: d };
+    });
+  const toggleDrink = (id: number) =>
+    setSel((s) => {
+      const d = new Map(s.drinks);
+      if (d.has(id)) d.delete(id);
+      else d.set(id, 1);
+      return { ...s, drinks: d };
+    });
+  const toggleExtra = (id: number) =>
+    setSel((s) => {
+      const d = new Map(s.extras);
+      if (d.has(id)) d.delete(id);
+      else d.set(id, 1);
+      return { ...s, extras: d };
+    });
 
-  const decExtra    = (id: number) => setSel(s => { const d = new Map(s.extras); d.set(id, Math.max(1, (d.get(id) ?? 1) - 1)); return { ...s, extras: d }; });
-  const incExtra    = (id: number) => setSel(s => { const d = new Map(s.extras); d.set(id, Math.max(1, (d.get(id) ?? 1) + 1)); return { ...s, extras: d }; });
-  const removeDish  = (id: number) => setSel(s => ({ ...s, dishes: new Set([...s.dishes].filter(x => x !== id)) }));
-  const removeDrink = (id: number) => setSel(s => { const d = new Map(s.drinks); d.delete(id); return { ...s, drinks: d }; });
+  const decExtra = (id: number) =>
+    setSel((s) => {
+      const d = new Map(s.extras);
+      d.set(id, Math.max(1, (d.get(id) ?? 1) - 1));
+      return { ...s, extras: d };
+    });
+  const incExtra = (id: number) =>
+    setSel((s) => {
+      const d = new Map(s.extras);
+      d.set(id, Math.max(1, (d.get(id) ?? 1) + 1));
+      return { ...s, extras: d };
+    });
+  const removeDish = (id: number) =>
+    setSel((s) => ({
+      ...s,
+      dishes: new Set([...s.dishes].filter((x) => x !== id)),
+    }));
+  const removeDrink = (id: number) =>
+    setSel((s) => {
+      const d = new Map(s.drinks);
+      d.delete(id);
+      return { ...s, drinks: d };
+    });
 
   const onSave = async () => {
     try {
@@ -126,46 +198,60 @@ export default function MenuTab({ eventId }: Props) {
       setError(null);
       const payload = {
         dishes: [...sel.dishes],
-        drinks: [...sel.drinks.entries()].map(([id, quantity]) => ({ id, quantity })) as MenuDrinkSelection[],
-        extras: [...sel.extras.entries()].map(([id, quantity]) => ({ id, quantity })) as MenuExtraSelection[],
+        drinks: [...sel.drinks.entries()].map(([id, quantity]) => ({
+          id,
+          quantity,
+        })) as MenuDrinkSelection[],
+        extras: [...sel.extras.entries()].map(([id, quantity]) => ({
+          id,
+          quantity,
+        })) as MenuExtraSelection[],
       };
       const updated = await uc.saveEventMenu(eventId, payload);
       setMenu(updated);
       setMessage("Menú guardado y PDF generado.");
       setTimeout(() => setMessage(null), 2500);
-    } catch (e: any) {
-      setError(e?.message ?? "Error guardando menú");
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : "Error guardando menú");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="p-4 text-sm text-[color:var(--color-text-main)]">Cargando menú…</div>;
+  if (loading)
+    return (
+      <div className="p-4 text-sm text-[color:var(--color-text-main)]">
+        Cargando menú…
+      </div>
+    );
   if (error) return <div className="p-4 text-sm text-red-600">{error}</div>;
 
   return (
     <div className="p-3">
       {message && <div className="mb-3 text-sm text-green-700">{message}</div>}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
-        <div>
-          <OptionGrid
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6">
+        <div className="space-y-6">
+          <OptionGridImproved
             title="Platos"
+            icon="🍽️"
             items={catalog?.dishes}
             isSelected={(id) => sel.dishes.has(id)}
             onToggle={toggleDish}
             groupOrder={DISH_GROUP_ORDER}
             searchPlaceholder="Buscar plato…"
           />
-          <OptionGrid
+          <OptionGridImproved
             title="Bebidas"
+            icon="🍷"
             items={catalog?.drinks}
             isSelected={(id) => sel.drinks.has(id)}
             onToggle={toggleDrink}
             searchPlaceholder="Buscar bebida…"
           />
-          <OptionGrid
+          <OptionGridImproved
             title="Extras"
+            icon="➕"
             items={catalog?.extras}
             isSelected={(id) => sel.extras.has(id)}
             onToggle={toggleExtra}
@@ -173,7 +259,7 @@ export default function MenuTab({ eventId }: Props) {
           />
         </div>
 
-        <aside>
+        <aside className="lg:sticky lg:top-4 h-fit">
           <SelectedSummary
             dishes={selectedDishes}
             drinks={selectedDrinks}
